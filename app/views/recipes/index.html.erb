@@ -1,2 +1,47 @@
-<h1>Recipes#index</h1>
-<p>Find me in app/views/recipes/index.html.erb</p>
+<!-- app/views/recipes/index.html.erb -->
+<div class="hero-section text-center py-5 mb-5">
+  <div class="container">
+    <h1 class="display-4 fw-bold text-primary">🍳 CookShare</h1>
+    <p class="lead">あなたの美味しいレシピを世界と共有しよう</p>
+    <div class="mt-4">
+      <button class="btn btn-primary btn-lg me-3">レシピを投稿</button>
+      <button class="btn btn-outline-primary btn-lg">レシピを探す</button>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <h2 class="h4 mb-4">人気のレシピ</h2>
+    
+    <!-- 仮のレシピカード（後でデータベースから取得） -->
+    <div class="row">
+      <div class="col-md-4 mb-4">
+        <div class="card recipe-card">
+          <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+            <span class="text-muted">🍝 画像予定地</span>
+          </div>
+          <div class="card-body">
+            <h5 class="card-title">簡単トマトパスタ</h5>
+            <p class="card-text text-muted">調理時間: 15分 | 2人分</p>
+            <button class="btn btn-outline-primary btn-sm">詳細を見る</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 2つ目、3つ目のカードも同様 -->
+      <div class="col-md-4 mb-4">
+        <div class="card recipe-card">
+          <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+            <span class="text-muted">🍛 画像予定地</span>
+          </div>
+          <div class="card-body">
+            <h5 class="card-title">チキンカレー</h5>
+            <p class="card-text text-muted">調理時間: 30分 | 4人分</p>
+            <button class="btn btn-outline-primary btn-sm">詳細を見る</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
