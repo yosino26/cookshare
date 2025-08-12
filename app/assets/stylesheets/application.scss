@@ -13,3 +13,33 @@
  *= require_tree .
  *= require_self
  */
+ 
+ @import "bootstrap";
+
+ // カスタムスタイル
+ .navbar-brand {
+   font-weight: bold;
+   color: #e74c3c !important;
+ }
+ 
+ .recipe-card {
+   transition: transform 0.3s ease;
+   border-radius: 15px;
+   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+   
+   &:hover {
+     transform: translateY(-5px);
+     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+   }
+ }
+ 
+ .btn-primary {
+   background: linear-gradient(45deg, #e74c3c, #c0392b);
+   border: none;
+   border-radius: 25px;
+   
+   &:hover {
+     background: linear-gradient(45deg, #c0392b, #a93226);
+     transform: translateY(-2px);
+   }
+ }
