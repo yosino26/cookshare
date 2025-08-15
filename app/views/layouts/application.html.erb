@@ -21,8 +21,20 @@
         
         <div class="navbar-nav ms-auto">
           <!-- 後でDeviseのリンクに置き換え -->
-          <a class="nav-link" href="#">ログイン</a>
-          <a class="nav-link" href="#">新規登録</a>
+          <% if user_signed_in? %>
+           <!-- ログイン済みの場合 -->
+            <span class="navbar-text me-3">
+               こんにちは、<%= current_user.name %>さん
+            </span>
+            <%= link_to "レシピ投稿", "#", class: "nav-link" %>
+            <%= link_to "マイページ", "#", class: "nav-link" %>
+            <%= link_to "ログアウト", destroy_user_session_path, 
+                      method: :delete, class: "nav-link" %>
+          <% else %>
+            <!-- 未ログインの場合 -->
+            <%= link_to "ログイン", new_user_session_path, class: "nav-link" %>
+            <%= link_to "新規登録", new_user_registration_path, class: "nav-link" %>
+          <% end %>
         </div>
       </div>
     </nav>
