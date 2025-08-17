@@ -21,8 +21,8 @@ default: &default
 
 development:
   <<: *default
-  database: cookshare_development
-  username: yosino26
+  database: postgres2
+  username: postgres
   password: zeburo26
   host: localhost
 
