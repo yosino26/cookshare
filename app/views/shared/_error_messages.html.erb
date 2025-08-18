@@ -1,0 +1,10 @@
+<% if object.errors.any? %>
+  <div class="alert alert-danger" role="alert">
+    <h6><strong><%= pluralize(object.errors.count, "error") %> prohibited this recipe from being saved:</strong></h6>
+    <ul class="mb-0">
+      <% object.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
