@@ -1,0 +1,76 @@
+<div class="row">
+  <div class="col-md-8">
+    <div class="card shadow">
+      <% if @recipe.image.present? %>
+        <div class="recipe-image-container">
+          <%= image_tag @recipe.image, class: "card-img-top recipe-main-image", 
+                        alt: @recipe.title %>
+        </div>
+      <% else %>
+        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+             style="height: 300px;">
+          <span class="text-muted fs-1">🍽️</span>
+        </div>
+      <% end %>
+      
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <h1 class="card-title h3"><%= @recipe.title %></h1>
+          <% if current_user == @recipe.user %>
+            <div class="btn-group">
+              <%= link_to "編集", edit_recipe_path(@recipe), 
+                          class: "btn btn-outline-primary btn-sm" %>
+              <%= link_to "削除", recipe_path(@recipe), method: :delete,
+                          class: "btn btn-outline-danger btn-sm",
+                          confirm: "本当に削除しますか？" %>
+            </div>
+          <% end %>
+        </div>
+        
+        <div class="recipe-meta mb-4">
+          <span class="badge bg-primary me-2">
+            ⏰ <%= @recipe.cooking_time %>分
+          </span>
+          <span class="badge bg-success me-2">
+            👥 <%= @recipe.servings %>人分
+          </span>
+          <span class="badge bg-info">
+            👨‍🍳 <%= @recipe.user.name %>
+          </span>
+        </div>
+        
+        <div class="recipe-description">
+          <h5>作り方・説明</h5>
+          <p class="card-text"><%= simple_format(@recipe.description) %></p>
+        </div>
+        
+        <div class="text-muted small">
+          投稿日: <%= @recipe.created_at.strftime("%Y年%m月%d日") %>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-body">
+        <h6 class="card-title">投稿者情報</h6>
+        <div class="d-flex align-items-center">
+          <div class="avatar-circle me-3">
+            👨‍🍳
+          </div>
+          <div>
+            <strong><%= @recipe.user.name %></strong><br>
+            <small class="text-muted">
+              投稿レシピ数: <%= @recipe.user.recipe_count %>件
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="text-center mt-4">
+  <%= link_to "レシピ一覧に戻る", recipes_path, class: "btn btn-outline-primary" %>
+</div>
