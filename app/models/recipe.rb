@@ -13,4 +13,7 @@ class Recipe < ApplicationRecord
   validates :servings, presence: true, 
                        numericality: { greater_than: 0, less_than: 20 }
   
+  # スコープ（よく使う検索条件）
+  scope :recent, -> { order(created_at: :desc) }
+  scope :by_cooking_time, ->(time) { where('cooking_time <= ?', time) }
 end
