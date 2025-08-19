@@ -52,6 +52,13 @@ class RecipesController < ApplicationController
   def recipe_params
     params.require(:recipe).permit(:title, :description, :cooking_time, :servings, :image)
   end
+  def recipe_params
+    params.require(:recipe).permit(
+      :title, :description, :cooking_time, :servings, :image,
+      ingredients_attributes: [:id, :name, :amount, :order_number, :_destroy],
+      steps_attributes: [:id, :instruction, :step_number, :_destroy]
+    )
+  end
 
   def correct_user
     redirect_to recipes_path unless @recipe.user == current_user
