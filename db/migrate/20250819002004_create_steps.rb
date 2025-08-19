@@ -7,9 +7,6 @@ class CreateSteps < ActiveRecord::Migration[7.1]
 
       t.timestamps
     end
-
-      # インデックス追加
-      add_index :steps, [:recipe_id, :step_number]
     
       # ユニーク制約（同じレシピ内で同じstep_numberは不可）
       add_index :steps, [:recipe_id, :step_number], unique: true
