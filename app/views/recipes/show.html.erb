@@ -39,10 +39,50 @@
           </span>
         </div>
         
-        <div class="recipe-description">
-          <h5>作り方・説明</h5>
+        <div class="recipe-description mb-4">
+          <h5>レシピの説明</h5>
           <p class="card-text"><%= simple_format(@recipe.description) %></p>
         </div>
+        
+        <!-- 材料セクション -->
+        <% if @recipe.ingredients.any? %>
+          <div class="ingredients-section mb-4">
+            <h5 class="border-bottom pb-2">🧄 材料（<%= @recipe.servings %>人分）</h5>
+            <div class="row">
+              <% @recipe.ordered_ingredients.each do |ingredient| %>
+                <div class="col-md-6 mb-2">
+                  <div class="d-flex justify-content-between align-items-center ingredient-item">
+                    <span class="ingredient-name"><%= ingredient.name %></span>
+                    <span class="ingredient-amount badge bg-light text-dark">
+                      <%= ingredient.amount %>
+                    </span>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+        
+        <!-- 手順セクション -->
+        <% if @recipe.steps.any? %>
+          <div class="steps-section mb-4">
+            <h5 class="border-bottom pb-2">👨‍🍳 作り方</h5>
+            <% @recipe.ordered_steps.each_with_index do |step, index| %>
+              <div class="step-item mb-3">
+                <div class="d-flex">
+                  <div class="step-number me-3">
+                    <span class="badge bg-primary rounded-circle step-badge">
+                      <%= index + 1 %>
+                    </span>
+                  </div>
+                  <div class="step-content">
+                    <p class="mb-0"><%= simple_format(step.instruction) %></p>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
         
         <div class="text-muted small">
           投稿日: <%= @recipe.created_at.strftime("%Y年%m月%d日") %>
@@ -52,7 +92,7 @@
   </div>
   
   <div class="col-md-4">
-    <div class="card">
+    <div class="card mb-3">
       <div class="card-body">
         <h6 class="card-title">投稿者情報</h6>
         <div class="d-flex align-items-center">
@@ -66,6 +106,19 @@
             </small>
           </div>
         </div>
+      </div>
+    </div>
+    
+    <!-- 栄養情報カード（将来的な拡張用） -->
+    <div class="card">
+      <div class="card-body">
+        <h6 class="card-title">レシピ情報</h6>
+        <ul class="list-unstyled mb-0">
+          <li>調理時間: <%= @recipe.cooking_time %>分</li>
+          <li>人数: <%= @recipe.servings %>人分</li>
+          <li>材料数: <%= @recipe.ingredients.count %>種類</li>
+          <li>手順数: <%= @recipe.steps.count %>ステップ</li>
+        </ul>
       </div>
     </div>
   </div>
