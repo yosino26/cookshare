@@ -50,31 +50,30 @@
             </div>
             
             <div id="ingredients-container">
-              <!-- 最初の材料フィールド -->
-              <div class="ingredient-field mb-3">
-                <div class="row align-items-end">
-                  <div class="col-md-6">
-                    <%= f.fields_for :ingredients, @recipe.ingredients.build do |ingredient_f| %>
+              <!-- 最初の素材フィールド -->
+              <%= f.fields_for :ingredients, @recipe.ingredients.build(order_number: 1) do |ingredient_f| %>
+                <div class="ingredient-field mb-3">
+                  <div class="row align-items-end">
+                    <div class="col-md-6">
                       <%= ingredient_f.label :name, "材料名", class: "form-label" %>
-                      <%= ingredient_f.text_field :name, class: "form-control", placeholder: "例: トマト" %>
-                    <% end %>
-                  </div>
-                  <div class="col-md-4">
-                    <%= f.fields_for :ingredients, @recipe.ingredients.first || @recipe.ingredients.build do |ingredient_f| %>
+                      <%= ingredient_f.text_field :name, class: "form-control", placeholder: "例: トマト", required: true %>
+                    </div>
+                    <div class="col-md-4">
                       <%= ingredient_f.label :amount, "分量", class: "form-label" %>
-                      <%= ingredient_f.text_field :amount, class: "form-control", placeholder: "例: 2個" %>
-                      <%= ingredient_f.hidden_field :order_number, value: 1 %>
-                    <% end %>
-                  </div>
-                  <div class="col-md-2">
-                    <button type="button" class="btn btn-outline-danger remove-ingredient">削除</button>
+                      <%= ingredient_f.text_field :amount, class: "form-control", placeholder: "例: 2個", required: true %>
+                      <%= ingredient_f.hidden_field :order_number, value: (ingredient_f.object.order_number || 1) %>
+                      <%= ingredient_f.hidden_field :id %>
+                    </div>
+                    <div class="col-md-2">
+                      <button type="button" class="btn btn-outline-danger remove-ingredient">削除</button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              <% end %>
             </div>
           </div>
 
-          <!-- 手順セクション -->
+        <!-- 手順セクション -->
           <div class="mb-5">
             <div class="d-flex justify-content-between align-items-center mb-3">
               <h4 class="border-bottom pb-2 mb-0">作り方</h4>
@@ -82,24 +81,25 @@
                 ➕ 手順を追加
               </button>
             </div>
-            
+
             <div id="steps-container">
               <!-- 最初の手順フィールド -->
-              <div class="step-field mb-3">
-                <div class="row align-items-end">
-                  <div class="col-md-10">
-                    <%= f.fields_for :steps, @recipe.steps.build do |step_f| %>
+              <%= f.fields_for :steps, @recipe.steps.build(step_number: 1) do |step_f| %>
+                <div class="step-field mb-3">
+                  <div class="row align-items-end">
+                    <div class="col-md-10">
                       <%= step_f.label :instruction, "手順 1", class: "form-label" %>
-                      <%= step_f.text_area :instruction, class: "form-control", rows: 3, 
-                                           placeholder: "手順を詳しく説明してください" %>
-                      <%= step_f.hidden_field :step_number, value: 1 %>
-                    <% end %>
-                  </div>
-                  <div class="col-md-2">
-                    <button type="button" class="btn btn-outline-danger remove-step">削除</button>
+                      <%= step_f.text_area :instruction, class: "form-control", rows: 3,
+                                           placeholder: "手順を詳しく説明してください", required: true %>
+                      <%= step_f.hidden_field :step_number, value: (step_f.object.step_number || 1) %>
+                      <%= step_f.hidden_field :id %>
+                    </div>
+                    <div class="col-md-2">
+                      <button type="button" class="btn btn-outline-danger remove-step">削除</button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              <% end %>
             </div>
           </div>
 

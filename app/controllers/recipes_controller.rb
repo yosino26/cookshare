@@ -14,6 +14,8 @@ class RecipesController < ApplicationController
 
   def new
     @recipe = current_user.recipes.build
+    @recipe.ingredients.build(order_number: 1) # ← 名前と分量を同じ行で入れる前提の空行
+    @recipe.steps.build(step_number: 1)
   end
 
   def create
