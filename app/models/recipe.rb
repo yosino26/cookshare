@@ -5,36 +5,52 @@ class Recipe < ApplicationRecord
   # 画像アップロード（Active Storage）
   has_one_attached :image
 
-  # 新しく追加するリレーション
-  has_many :ingredients, dependent: :destroy
-  has_many :steps, dependent: :destroy
+  # 関連
+  has_many :ingredients, dependent: :destroy, inverse_of: :recipe
+  has_many :steps,       dependent: :destroy,  inverse_of: :recipe
 
-  # ネストされた属性を許可（フォームで使用）
-  accepts_nested_attributes_for :ingredients, 
-  allow_destroy: true, 
-  reject_if: :all_blank
-    accepts_nested_attributes_for :steps, 
-  allow_destroy: true, 
-  reject_if: :all_blank
-  
+  # ネスト属性
+  accepts_nested_attributes_for :ingredients,
+    allow_destroy: true,
+    reject_if: ->(attrs) { attrs['name'].blank? && attrs['amount'].blank? }
+
+  accepts_nested_attributes_for :steps,
+    allow_destroy: true,
+    reject_if: ->(attrs) { attrs['instruction'].blank? }
+
   # バリデーション
-  validates :title, presence: true, length: { maximum: 30 }
+  validates :title,       presence: true, length: { maximum: 30 }
   validates :description, presence: true, length: { maximum: 1000 }
-  validates :cooking_time, presence: true, 
-                           numericality: { greater_than: 0, less_than: 1000 }
-  validates :servings, presence: true, 
-                       numericality: { greater_than: 0, less_than: 20 }
-  
-  # スコープ（よく使う検索条件）
-  scope :recent, -> { order(created_at: :desc) }
-  scope :by_cooking_time, ->(time) { where('cooking_time <= ?', time) }
+  validates :cooking_time,
+    presence: true,
+    numericality: { greater_than: 0, less_than: 1000 }
+  validates :servings,
+    presence: true,
+    numericality: { greater_than: 0, less_than_or_equal_to: 20 }
 
-    # 新しく追加するメソッド
-    def ordered_ingredients
-      ingredients.ordered
-    end
-    
-    def ordered_steps
-      steps.ordered
-    end
+  # スコープ
+  scope :recent, -> { order(created_at: :desc) }
+  scope :by_cooking_time, ->(time) { where('cooking_time <= ?', time.to_i) }
+
+  # 表示用の並び
+  def ordered_ingredients
+    ingredients.order(:order_number)
+  end
+
+  def ordered_steps
+    steps.order(:step_number)
+  end
+
+  # （任意）Active Storageの型/サイズチェック
+  # validate :image_type_and_size
+  # def image_type_and_size
+  #   return unless image.attached?
+  #   unless image.content_type.in?(%w[image/png image/jpeg image/webp])
+  #     errors.add(:image, 'はPNG/JPEG/WEBPのみアップロードできます')
+  #   end
+  #   if image.byte_size > 5.megabytes
+  #     errors.add(:image, 'は5MB以下にしてください')
+  #   end
+  # end
 end
+
