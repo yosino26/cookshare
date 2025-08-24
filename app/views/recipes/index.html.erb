@@ -16,27 +16,13 @@
     <div class="col-md-4 mb-4">
       <div class="card recipe-card h-100">
 
-        <%# 画像（ActiveStorage 導入前後どちらでも動く分岐） %>
-        <% has_image =
-             if recipe.respond_to?(:image) && recipe.image.respond_to?(:attached?)
-               recipe.image.attached?                                 # ActiveStorage 用
-             else
-               recipe.image.present?                                  # 文字列URLなどの場合
-             end %>
-
-        <% if has_image %>
-          <%# ActiveStorage の場合は variant / それ以外はそのまま %>
-          <% if recipe.respond_to?(:image) && recipe.image.respond_to?(:variant) %>
-            <%= image_tag recipe.image.variant(resize_to_fill: [600, 400]),
-                          class: "card-img-top", alt: recipe.title %>
+        <% if recipe.image.attached? %>
+              <%= image_tag recipe.image.variant(resize_to_fill: [600, 400]), class: "card-img-top", alt: recipe.title %>
           <% else %>
-            <%= image_tag recipe.image, class: "card-img-top", alt: recipe.title %>
+              <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                  <span class="text-muted">🍝 画像なし</span>
+              </div>
           <% end %>
-        <% else %>
-          <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-            <span class="text-muted">🍝 画像なし</span>
-          </div>
-        <% end %>
 
         <div class="card-body">
           <h5 class="card-title"><%= recipe.title %></h5>
