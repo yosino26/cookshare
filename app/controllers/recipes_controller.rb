@@ -8,6 +8,28 @@ class RecipesController < ApplicationController
     .recent
     .page(params[:page])
     .per(12)
+
+    # 検索機能
+    if params[:search].present?
+      @recipes = @recipes.search_by_title_and_description(params[:search])
+    end
+    
+    # 調理時間フィルター
+    if params[:cooking_time].present?
+      @recipes = @recipes.by_cooking_time(params[:cooking_time])
+    end
+    
+    # ソート機能
+    case params[:sort]
+    when 'cooking_time'
+      @recipes = @recipes.order(:cooking_time)
+    when 'popular'
+      @recipes = @recipes.order(created_at: :desc) # 後でいいね数でソート予定
+    else
+      @recipes = @recipes.recent
+    end
+    
+    @recipes = @recipes.page(params[:page]).per(12)
 # 統計情報
 @total_recipes = Recipe.count
 @total_users = User.count

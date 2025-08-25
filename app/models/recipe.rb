@@ -32,6 +32,16 @@ class Recipe < ApplicationRecord
   scope :recent, -> { order(created_at: :desc) }
   scope :by_cooking_time, ->(time) { where('cooking_time <= ?', time.to_i) }
 
+  # 検索用スコープ
+  scope :search_by_title_and_description, ->(keyword) {
+      where("title ILIKE ? OR description ILIKE ?", "%#{keyword}%", "%#{keyword}%")
+  }
+    
+  scope :by_cooking_time, ->(time) { where('cooking_time <= ?', time) }
+    
+  scope :recent, -> { order(created_at: :desc) }
+
+  
   # 表示用の並び
   def ordered_ingredients
     ingredients.order(:order_number)
