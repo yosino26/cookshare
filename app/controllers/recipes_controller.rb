@@ -4,8 +4,14 @@ class RecipesController < ApplicationController
   before_action :correct_user, only: [:edit, :update, :destroy]
 
   def index
-    @recipes = Recipe.includes(:user).recent.limit(12)
-    # includes(:user) でN+1問題を防ぐ
+    @recipes = Recipe.includes(:user, image_attachment: :blob)
+    .recent
+    .page(params[:page])
+    .per(12)
+# 統計情報
+@total_recipes = Recipe.count
+@total_users = User.count
+@recent_recipes = Recipe.recent.limit(6)
   end
 
   def show
