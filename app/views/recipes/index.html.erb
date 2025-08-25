@@ -1,45 +1,139 @@
-<!-- app/views/recipes/index.html.erb -->
-<div class="hero-section text-center py-5 mb-5">
+<!-- ヒーローセクション -->
+<div class="hero-section text-center py-5 mb-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 20px;">
   <div class="container">
-    <h1 class="display-4 fw-bold text-primary">🍳 CookShare</h1>
-    <p class="lead">あなたの美味しいレシピを世界と共有しよう</p>
+    <h1 class="display-4 fw-bold">🍳 CookShare</h1>
+    <p class="lead mb-4">あなたの美味しいレシピを世界と共有しよう</p>
+    <div class="row text-center mb-4">
+      <div class="col-md-4">
+        <h3><%= @total_recipes %></h3>
+        <p>投稿レシピ数</p>
+      </div>
+      <div class="col-md-4">
+        <h3><%= @total_users %></h3>
+        <p>登録ユーザー数</p>
+      </div>
+      <div class="col-md-4">
+        <h3><%= Date.current.strftime("%m/%d") %></h3>
+        <p>今日の日付</p>
+      </div>
+    </div>
     <div class="mt-4">
-      <%= link_to "レシピを投稿", new_recipe_path,class: "btn btn-primary btn-lg me-3" %>
-      <button class="btn btn-outline-primary btn-lg">レシピを探す</button>
+      <% if user_signed_in? %>
+        <%= link_to "レシピを投稿", new_recipe_path, class: "btn btn-warning btn-lg me-3" %>
+        <%= link_to "レシピを探す", "#recipes-section", class: "btn btn-outline-light btn-lg" %>
+      <% else %>
+        <%= link_to "今すぐ参加", new_user_registration_path, class: "btn btn-warning btn-lg me-3" %>
+        <%= link_to "レシピを見る", "#recipes-section", class: "btn btn-outline-light btn-lg" %>
+      <% end %>
     </div>
   </div>
 </div>
-   
-<!-- カード一覧 -->
-<div class="row">
-  <% @recipes.each do |recipe| %>
-    <div class="col-md-4 mb-4">
-      <div class="card recipe-card h-100">
 
-        <% if recipe.image.attached? %>
-              <%= image_tag recipe.image.variant(resize_to_fill: [600, 400]), class: "card-img-top", alt: recipe.title %>
-          <% else %>
-              <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                  <span class="text-muted">🍝 画像なし</span>
+<!-- 検索セクション -->
+<div class="search-section mb-5">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <%= form_with url: recipes_path, method: :get, local: true, class: "d-flex gap-3" do |f| %>
+        <div class="flex-grow-1">
+          <%= f.text_field :search, placeholder: "レシピを検索...", 
+                          class: "form-control form-control-lg",
+                          value: params[:search] %>
+        </div>
+        <div>
+          <%= f.select :cooking_time, 
+                      options_for_select([
+                        ['調理時間を選択', ''],
+                        ['15分以内', '15'],
+                        ['30分以内', '30'],
+                        ['1時間以内', '60']
+                      ], params[:cooking_time]), 
+                      {}, { class: "form-select form-select-lg" } %>
+        </div>
+        <div>
+          <%= f.submit "検索", class: "btn btn-primary btn-lg" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- レシピ一覧セクション -->
+<div id="recipes-section" class="mb-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 mb-0">
+      <%= params[:search].present? ? "検索結果" : "最新のレシピ" %>
+      <span class="text-muted">(<%= @recipes.total_count %>件)</span>
+    </h2>
+    <div class="dropdown">
+      <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+        並び順
+      </button>
+      <ul class="dropdown-menu">
+        <li><%= link_to "新着順", recipes_path(sort: "recent"), class: "dropdown-item" %></li>
+        <li><%= link_to "調理時間順", recipes_path(sort: "cooking_time"), class: "dropdown-item" %></li>
+        <li><%= link_to "人気順", recipes_path(sort: "popular"), class: "dropdown-item" %></li>
+      </ul>
+    </div>
+  </div>
+
+  <% if @recipes.any? %>
+    <div class="row">
+      <% @recipes.each do |recipe| %>
+        <div class="col-lg-4 col-md-6 mb-4">
+          <div class="card recipe-card h-100 shadow-sm">
+            <div class="recipe-image-container">
+              <% if recipe.image.present? %>
+                <%= image_tag recipe.image, class: "card-img-top recipe-card-image", alt: recipe.title %>
+              <% else %>
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center recipe-card-image">
+                  <span class="text-muted fs-1">🍽️</span>
+                </div>
+              <% end %>
+              <div class="recipe-overlay">
+                <%= link_to "詳細を見る", recipe_path(recipe), class: "btn btn-light btn-sm" %>
               </div>
-          <% end %>
-
-        <div class="card-body">
-          <h5 class="card-title"><%= recipe.title %></h5>
-          <p class="card-text text-muted">
-            調理時間: <%= recipe.cooking_time %>分 |
-            <%= recipe.servings %>人分
-          </p>
-
-          <div class="d-flex justify-content-between align-items-center">
-            <%= link_to "詳細を見る", recipe_path(recipe), class: "btn btn-outline-primary btn-sm" %>
-            <small class="text-muted">
-              by <%= link_to recipe.user.name, user_path(recipe.user) %>
-            </small>
+            </div>
+            
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title">
+                <%= link_to recipe.title, recipe_path(recipe), 
+                           class: "text-decoration-none text-dark" %>
+              </h5>
+              
+              <p class="card-text text-muted flex-grow-1">
+                <%= truncate(recipe.description, length: 80) %>
+              </p>
+              
+              <div class="recipe-meta mb-3">
+                <small class="text-muted">
+                  <i class="bi bi-clock"></i> <%= recipe.cooking_time %>分 |
+                  <i class="bi bi-people"></i> <%= recipe.servings %>人分 |
+                  <i class="bi bi-person"></i> <%= recipe.user.name %>
+                </small>
+              </div>
+              
+              <div class="recipe-stats">
+                <span class="badge bg-primary me-1">材料 <%= recipe.ingredients.count %>種</span>
+                <span class="badge bg-success">手順 <%= recipe.steps.count %>個</span>
+              </div>
+            </div>
           </div>
         </div>
+      <% end %>
+    </div>
 
+    <!-- ページネーション -->
+    <div class="d-flex justify-content-center mt-4">
+      <%= paginate @recipes, theme: 'twitter-bootstrap-4' %>
+    </div>
+  <% else %>
+    <div class="text-center py-5">
+      <div class="mb-4">
+        <span style="font-size: 4rem;">🔍</span>
       </div>
+      <h4>レシピが見つかりませんでした</h4>
+      <p class="text-muted">検索条件を変更して再度お試しください</p>
+      <%= link_to "すべてのレシピを見る", recipes_path, class: "btn btn-primary" %>
     </div>
   <% end %>
 </div>
