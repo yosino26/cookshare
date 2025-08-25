@@ -1,2 +1,111 @@
-<h1>Users#show</h1>
-<p>Find me in app/views/users/show.html.erb</p>
+<!--  -->
+<div class="row">
+  <div class="col-md-4">
+    <div class="card shadow">
+      <div class="card-body text-center p-4">
+        <div class="avatar-large mx-auto mb-3">
+          <% if @user.avatar.present? %>
+            <%= image_tag @user.avatar, class: "rounded-circle", 
+                         style: "width: 120px; height: 120px; object-fit: cover;" %>
+          <% else %>
+            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center"
+                 style="width: 120px; height: 120px; font-size: 3rem; color: white;">
+              👨‍🍳
+            </div>
+          <% end %>
+        </div>
+        
+        <h3 class="mb-2"><%= @user.display_name %></h3>
+        
+        <% if @user.bio.present? %>
+          <p class="text-muted mb-3"><%= simple_format(@user.bio) %></p>
+        <% end %>
+        
+        <div class="row text-center mb-3">
+          <div class="col-6">
+            <h4 class="text-primary"><%= @user.recipe_count %></h4>
+            <small class="text-muted">投稿レシピ</small>
+          </div>
+          <div class="col-6">
+            <h4 class="text-success"><%= @user.created_at.strftime("%Y年%m月") %></h4>
+            <small class="text-muted">参加時期</small>
+          </div>
+        </div>
+        
+        <% if current_user == @user %>
+          <div class="d-grid gap-2">
+            <%= link_to "プロフィール編集", edit_user_path(@user), 
+                       class: "btn btn-outline-primary" %>
+            <%= link_to "新しいレシピを投稿", new_recipe_path, 
+                       class: "btn btn-primary" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-8">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4><%= @user.display_name %>さんのレシピ</h4>
+      <span class="badge bg-primary"><%= @user_recipes.total_count %>件</span>
+    </div>
+    
+    <% if @user_recipes.any? %>
+      <div class="row">
+        <% @user_recipes.each do |recipe| %>
+          <div class="col-lg-6 mb-4">
+            <div class="card recipe-card shadow-sm">
+              <div class="row g-0">
+                <div class="col-md-4">
+                  <% if recipe.image.present? %>
+                    <%= image_tag recipe.image, class: "img-fluid rounded-start h-100", 
+                                 style: "object-fit: cover;", alt: recipe.title %>
+                  <% else %>
+                    <div class="bg-light d-flex align-items-center justify-content-center h-100 rounded-start">
+                      <span class="text-muted fs-3">🍽️</span>
+                    </div>
+                  <% end %>
+                </div>
+                <div class="col-md-8">
+                  <div class="card-body">
+                    <h6 class="card-title">
+                      <%= link_to recipe.title, recipe_path(recipe), 
+                                 class: "text-decoration-none" %>
+                    </h6>
+                    <p class="card-text">
+                      <small class="text-muted">
+                        ⏰ <%= recipe.cooking_time %>分 | 
+                        👥 <%= recipe.servings %>人分
+                      </small>
+                    </p>
+                    <p class="card-text">
+                      <small class="text-muted">
+                        <%= recipe.created_at.strftime("%Y年%m月%d日") %>投稿
+                      </small>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      
+      <!-- ページネーション -->
+      <div class="d-flex justify-content-center mt-4">
+        <%= paginate @user_recipes %>
+      </div>
+    <% else %>
+      <div class="text-center py-5">
+        <div class="mb-4">
+          <span style="font-size: 4rem;">📝</span>
+        </div>
+        <h5>まだレシピが投稿されていません</h5>
+        <% if current_user == @user %>
+          <p class="text-muted">最初のレシピを投稿してみませんか？</p>
+          <%= link_to "レシピを投稿", new_recipe_path, class: "btn btn-primary" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
