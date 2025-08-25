@@ -14,5 +14,5 @@ Rails.application.routes.draw do
   end
   
   # ユーザーのプロフィールページ
-  resources :users, only: [:show]
+  resources :users, only: [:show, :edit, :update]
 end
