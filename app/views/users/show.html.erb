@@ -3,6 +3,8 @@
   <div class="col-md-4">
     <div class="card shadow">
       <div class="card-body text-center p-4">
+
+      <!-- ユーザーカード -->
         <div class="avatar-large mx-auto mb-3">
           <% if @user.avatar.present? %>
             <%= image_tag @user.avatar, class: "rounded-circle", 
@@ -44,6 +46,7 @@
     </div>
   </div>
   
+<!-- 投稿レシピカード一覧 -->
   <div class="col-md-8">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h4><%= @user.display_name %>さんのレシピ</h4>
