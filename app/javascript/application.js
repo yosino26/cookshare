@@ -1,17 +1,19 @@
-// Turbo & Stimulus
+// Turbo
 import "@hotwired/turbo-rails"
-import "controllers"
 
 // Active Storage
 import * as ActiveStorage from "@rails/activestorage"
 
-// Bootstrap（Popper → Bootstrap の順で）
+// Popper → Bootstrap（順番厳守）
+import "@popperjs/core"
+import "bootstrap"
 
-
-// （使っていれば）ActionCable
+// Stimulus/Channelsを使うなら有効化（使ってなければこのままコメントでOK）
+// import "controllers"
 // import "channels"
 
 // Custom JS
 import "./recipe_form"
 
+// ActiveStorageは最後に1回だけ起動
 ActiveStorage.start()
