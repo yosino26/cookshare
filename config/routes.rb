@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  get 'users/show'
+  get 'users/edit'
+  get 'users/update'
   devise_for :users
   root 'recipes#index'  # トップページをレシピ一覧に
   
@@ -11,5 +14,5 @@ Rails.application.routes.draw do
   end
   
   # ユーザーのプロフィールページ
-  resources :users, only: [:show]
+  resources :users, only: [:show, :edit, :update]
 end

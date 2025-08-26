@@ -127,3 +127,78 @@
     margin-bottom: 1rem;
   }
 }
+
+// レシピカードのホバー効果強化
+.recipe-card {
+  transition: all 0.3s ease;
+  border: none;
+  
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  }
+  
+  .recipe-image-container {
+    position: relative;
+    overflow: hidden;
+    
+    .recipe-card-image {
+      height: 200px;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+    
+    .recipe-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    &:hover .recipe-overlay {
+      opacity: 1;
+    }
+    
+    &:hover .recipe-card-image {
+      transform: scale(1.1);
+    }
+  }
+}
+
+// 検索セクションのスタイル
+.search-section {
+  .card {
+    border-radius: 15px;
+    border: none;
+  }
+  
+  .form-control-lg, .form-select-lg {
+    border-radius: 10px;
+  }
+}
+
+// ユーザーページのスタイル
+.avatar-large {
+  width: 120px;
+  height: 120px;
+}
+
+// レスポンシブ対応
+@media (max-width: 768px) {
+  .hero-section {
+    .display-4 {
+      font-size: 2rem;
+    }
+  }
+  
+  .recipe-card .recipe-overlay {
+    opacity: 1;
+  }
+}
