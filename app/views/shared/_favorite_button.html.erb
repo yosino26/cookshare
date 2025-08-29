@@ -3,7 +3,7 @@
     <% if current_user.favorited?(recipe) %>
       <%= link_to recipe_favorite_path(recipe), 
                   class: "btn btn-outline-danger btn-sm",
-                  data: { turbo_method: :delete } do %>
+                  data: { turbo_method: "delete" } do %>
         ❤️ <%= recipe.favorite_count %>
       <% end %>
     <% else %>
