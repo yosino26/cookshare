@@ -1,18 +1,21 @@
 Rails.application.routes.draw do
-  get 'users/show'
-  get 'users/edit'
-  get 'users/update'
   devise_for :users
-  root 'recipes#index'  # トップページをレシピ一覧に
-  
-  # RESTfulなレシピルーティング
+
+  # トップページ
+  root 'recipes#index'
+
+  # レシピ
   resources :recipes do
-    # 検索機能（/recipes/search）
     collection do
-      get :search
+      get :search   # /recipes/search
+    end
+    resource :favorite, only: [:create, :destroy]  # /recipes/:recipe_id/favorite
+  end
+
+  # ユーザー（プロフィール表示・編集・更新・お気に入り一覧）
+  resources :users, only: [:show, :edit, :update] do
+    member do
+      get :favorites  # /users/:id/favorites
     end
   end
-  
-  # ユーザーのプロフィールページ
-  resources :users, only: [:show, :edit, :update]
 end

@@ -65,7 +65,9 @@ class Recipe < ApplicationRecord
 
   # お気に入り関連のリレーション追加
   has_many :favorites, dependent: :destroy
-  has_many :favorited_by, through: :favorites, source: :user
+  #中間テーブルを経由して関連付け
+  has_many :favorited_by, through: :favorites, source: :user 
+  
   
   # お気に入り数を取得
   def favorite_count
