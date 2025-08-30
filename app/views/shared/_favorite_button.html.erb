@@ -1,0 +1,27 @@
+<div class="favorite-button">
+  <% if user_signed_in? %>
+    <% if current_user.favorited?(recipe) %>
+      <%= link_to recipe_favorite_path(recipe), 
+                  class: "btn btn-outline-danger btn-sm",
+                  data: { turbo_method: "delete" } do %>
+        ❤️ <%= recipe.favorite_count %>
+      <% end %>
+    <% else %>
+      <%= link_to recipe_favorite_path(recipe),
+            data: { turbo_method: :post },
+            class: "btn btn-outline-secondary btn-sm",
+            title: "お気に入りに追加",
+            aria: { label: "お気に入りに追加" } do %>
+        🤍 <%= recipe.favorite_count %>
+      <% end %>
+    <% end %>
+
+  <% else %>
+  <%= link_to new_user_session_path,
+           class: "btn btn-outline-secondary btn-sm",
+           title: "ログインしてお気に入り登録",
+           aria: { label: "ログインしてお気に入り登録" } do %>
+      🤍 <%= recipe.favorite_count %>
+    <% end %>
+  <% end %>
+</div>

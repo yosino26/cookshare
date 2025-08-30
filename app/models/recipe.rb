@@ -62,5 +62,23 @@ class Recipe < ApplicationRecord
   #     errors.add(:image, 'は5MB以下にしてください')
   #   end
   # end
+
+  # お気に入り関連のリレーション追加
+  has_many :favorites, dependent: :destroy
+  #中間テーブルを経由して関連付け
+  has_many :favorited_by, through: :favorites, source: :user 
+  
+  
+  # お気に入り数を取得
+  def favorite_count
+    favorites.count
+  end
+  
+  # 人気順のスコープ（お気に入り数順）
+  scope :popular, -> { 
+    left_joins(:favorites)
+      .group(:id)
+      .order('COUNT(favorites.id) DESC')
+  }
 end
 
