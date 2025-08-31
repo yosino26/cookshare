@@ -2,6 +2,11 @@ class Recipe < ApplicationRecord
   # リレーション
   belongs_to :user
 
+  # お気に入り関連のリレーション追加
+  has_many :favorites, dependent: :destroy
+  #中間テーブルを経由して関連付け
+  has_many :favorited_by, through: :favorites, source: :user   
+
   # 画像アップロード（Active Storage）
   has_one_attached :image
 
@@ -36,10 +41,6 @@ class Recipe < ApplicationRecord
   scope :search_by_title_and_description, ->(keyword) {
       where("title ILIKE ? OR description ILIKE ?", "%#{keyword}%", "%#{keyword}%")
   }
-    
-  scope :by_cooking_time, ->(time) { where('cooking_time <= ?', time) }
-    
-  scope :recent, -> { order(created_at: :desc) }
 
   
   # 表示用の並び
@@ -63,10 +64,7 @@ class Recipe < ApplicationRecord
   #   end
   # end
 
-  # お気に入り関連のリレーション追加
-  has_many :favorites, dependent: :destroy
-  #中間テーブルを経由して関連付け
-  has_many :favorited_by, through: :favorites, source: :user 
+
   
   
   # お気に入り数を取得

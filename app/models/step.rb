@@ -1,5 +1,5 @@
 class Step < ApplicationRecord
-  belongs_to :recipe
+  belongs_to :recipe, inverse_of: :steps
 
   # バリデーション
   validates :instruction, presence: true, length: { maximum: 500 }
