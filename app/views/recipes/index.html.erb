@@ -37,7 +37,6 @@
 <!-- Cardセクション -->
 <% if @recipes.present? %>
 <div class="row">
-  <% @recipes.each do |recipe| %>
   <% if @recipes.any? %>
    <div id="recipes-section" class="row">
       <%= render partial: "card", collection: @recipes, as: :recipe %>
@@ -48,7 +47,6 @@
   <% else %>
     <%= render "empty_state" %>
   <% end %>
- <% end %>
 </div>
 
     <!-- ページネーション -->
