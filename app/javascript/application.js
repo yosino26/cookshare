@@ -13,7 +13,7 @@ import "bootstrap"
 // import "channels"
 
 // Custom JS
-import "./recipe_form"
+// import "./recipe_form"
 
 import "./nested_fields"
 

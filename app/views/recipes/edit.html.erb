@@ -46,7 +46,13 @@
 
           <!-- 材料セクション -->
           <div class="mb-5">
-            <h4 class="border-bottom pb-2 mb-3">材料</h4>
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                  <h4 class="border-bottom pb-2 mb-0">材料</h4>
+                  <button type="button" id="add-ingredient" class="btn btn-outline-primary btn-sm">
+                      ➕ 材料を追加
+                  </button>
+          </div>
+
             <div id="ingredients-container">
               <%= f.fields_for :ingredients do |ingredient_f| %>
                 <div class="ingredient-field mb-3">
@@ -67,11 +73,43 @@
                 </div>
               <% end %>
             </div>
+
+      <!-- 追加用テンプレート（new と同じものを再利用） -->
+      <!-- 材料用のテンプレート（非表示） -->
+      <template id="ingredient-template">
+        <div class="ingredient-field mb-3">
+          <div class="row align-items-end">
+            <div class="col-md-6">
+              <label class="form-label" for="recipe_ingredients_NEW_RECORD_name">材料名</label>
+               <input type="text" name="recipe[ingredients_attributes][NEW_RECORD][name]"
+               id="recipe_ingredients_NEW_RECORD_name"
+               class="form-control" placeholder="例: トマト" required="required">
+            </div>
+          <div class="col-md-4">
+              <label class="form-label" for="recipe_ingredients_NEW_RECORD_amount">分量</label>
+                <input type="text" name="recipe[ingredients_attributes][NEW_RECORD][amount]"
+                       id="recipe_ingredients_NEW_RECORD_amount"
+                       class="form-control" placeholder="例: 2個" required="required">
+                <input type="hidden" name="recipe[ingredients_attributes][NEW_RECORD][order_number]" value="">
+          </div>
+             <div class="col-md-2">
+                 <button type="button" class="btn btn-outline-danger remove-ingredient">削除</button>
+             </div>
+          </div>
+        </div>
+       </template>
+
           </div>
 
           <!-- 手順セクション -->
-          <div class="mb-5">
-            <h4 class="border-bottom pb-2 mb-3">作り方</h4>
+        <div class="mb-5">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="border-bottom pb-2 mb-0">作り方</h4>
+            <button type="button" id="add-step" class="btn btn-outline-primary btn-sm">
+              ➕ 手順を追加
+            </button>
+          </div>
+
             <div id="steps-container">
               <%= f.fields_for :steps do |step_f| %>
                 <div class="step-field mb-3">
@@ -88,6 +126,25 @@
                 </div>
               <% end %>
             </div>
+
+          <!-- 手順用のテンプレート（非表示） -->
+          <template id="step-template">
+            <div class="step-field mb-3">
+              <div class="row align-items-end">
+                <div class="col-md-10">
+                  <label class="form-label" for="recipe_steps_NEW_RECORD_instruction">手順</label>
+                  <textarea name="recipe[steps_attributes][NEW_RECORD][instruction]"
+                            id="recipe_steps_NEW_RECORD_instruction"
+                            class="form-control" rows="3" placeholder="手順を詳しく" required></textarea>
+                  <input type="hidden" name="recipe[steps_attributes][NEW_RECORD][step_number]" value="">
+                </div>
+                <div class="col-md-2">
+                  <button type="button" class="btn btn-outline-danger remove-step">削除</button>
+                </div>
+              </div>
+            </div>
+          </template>
+
           </div>
 
           <!-- 更新ボタン -->
