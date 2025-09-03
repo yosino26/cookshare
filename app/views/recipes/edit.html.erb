@@ -64,7 +64,7 @@
                     <div class="col-md-4">
                       <%= ingredient_f.label :amount, "分量", class: "form-label" %>
                       <%= ingredient_f.text_field :amount, class: "form-control", required: true %>
-                      <%= ingredient_f.hidden_field :id %>
+                      <%= ingredient_f.hidden_field :_destroy  %>
                     </div>
                     <div class="col-md-2">
                       <button type="button" class="btn btn-outline-danger remove-ingredient">削除</button>
@@ -117,7 +117,7 @@
                     <div class="col-md-10">
                       <%= step_f.label :instruction, "手順", class: "form-label" %>
                       <%= step_f.text_area :instruction, class: "form-control", rows: 3, required: true %>
-                      <%= step_f.hidden_field :id %>
+                      <%= step_f.hidden_field :_destroy  %>
                     </div>
                     <div class="col-md-2">
                       <button type="button" class="btn btn-outline-danger remove-step">削除</button>
