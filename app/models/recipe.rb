@@ -13,6 +13,7 @@ class Recipe < ApplicationRecord
   # 関連
   has_many :ingredients, dependent: :destroy, inverse_of: :recipe
   has_many :steps,       dependent: :destroy,  inverse_of: :recipe
+  has_many :comments, dependent: :destroy
 
   # ネスト属性
   accepts_nested_attributes_for :ingredients,
@@ -70,6 +71,11 @@ class Recipe < ApplicationRecord
   # お気に入り数を取得
   def favorite_count
     favorites.count
+  end
+
+  # コメント数を取得
+  def comment_count
+    comments.count
   end
   
   # 人気順のスコープ（お気に入り数順）
