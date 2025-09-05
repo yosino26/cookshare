@@ -124,6 +124,72 @@
   </div>
 </div>
 
+<!-- コメントセクション -->
+<div class="row mt-5">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">💬 コメント (<%= @recipe.comment_count %>)</h5>
+      </div>
+      
+      <div class="card-body">
+        <!-- コメント投稿フォーム -->
+        <% if user_signed_in? %>
+          <%= form_with model: [@recipe, Comment.new], local: true, class: "mb-4" do |f| %>
+            <div class="mb-3">
+              <%= f.text_area :content, class: "form-control", rows: 3,
+                              placeholder: "コメントを入力してください..." %>
+            </div>
+            <%= f.submit "コメント投稿", class: "btn btn-primary" %>
+          <% end %>
+        <% else %>
+          <div class="alert alert-info">
+            コメントを投稿するには<%= link_to "ログイン", new_user_session_path %>してください
+          </div>
+        <% end %>
+        
+        <!-- コメント一覧 -->
+        <div class="comments-list">
+          <% @recipe.comments.includes(:user).recent.each do |comment| %>
+            <div class="comment-item border-bottom pb-3 mb-3">
+              <div class="d-flex justify-content-between align-items-start">
+                <div class="d-flex">
+                  <div class="avatar-circle me-3">👨‍💼</div>
+                  <div>
+                    <strong><%= comment.user.name %></strong>
+                    <small class="text-muted">
+                      <%= time_ago_in_words(comment.created_at) %>前
+                    </small>
+                  </div>
+                </div>
+                
+                <% if current_user == comment.user %>
+                  <%= link_to "削除", recipe_comment_path(@recipe, comment),
+                              method: :delete,
+                              class: "btn btn-outline-danger btn-sm",
+                              confirm: "本当に削除しますか？",
+                              data: { turbo_method: :delete } %>
+                <% end %>
+              </div>
+              <div class="mt-2">
+                <p class="mb-0"><%= simple_format(comment.content) %></p>
+              </div>
+            </div>
+          <% end %>
+          
+          <% if @recipe.comments.empty? %>
+            <div class="text-center text-muted py-4">
+              まだコメントがありません
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- コメントセクション終わり -->
+
+
 <div class="text-center mt-4">
   <%= link_to "レシピ一覧に戻る", recipes_path, class: "btn btn-outline-primary" %>
 </div>

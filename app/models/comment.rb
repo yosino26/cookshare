@@ -5,5 +5,5 @@ class Comment < ApplicationRecord
   validates :content, presence: true, length: { maximum: 500 }
   
   # 新しい順で取得
-  scope :recent, -> { order(created_at: :desc) 
+  scope :recent, -> { order(created_at: :desc) }
 end
