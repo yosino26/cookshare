@@ -10,6 +10,7 @@ Rails.application.routes.draw do
       get :search   # /recipes/search
     end
     resource :favorite, only: [:create, :destroy]  # /recipes/:recipe_id/favorite
+    resources :comments, only: [:create, :destroy]  # 追加
   end
 
   # ユーザー（プロフィール表示・編集・更新・お気に入り一覧）
