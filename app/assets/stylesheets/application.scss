@@ -202,3 +202,40 @@
     opacity: 1;
   }
 }
+
+
+//コメント機能で追加
+.comment-item {
+  &:last-child {
+    border-bottom: none !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+}
+
+.favorite-button {
+  .btn {
+    min-width: 60px;
+  }
+}
+
+.recipe-image-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.recipe-card-image {
+  height: 200px;
+  width: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.recipe-card:hover .recipe-card-image {
+  transform: scale(1.05);
+}
+
+.recipe-placeholder {
+  height: 200px;
+  font-size: 3rem;
+}
