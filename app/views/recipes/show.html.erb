@@ -189,6 +189,11 @@
 </div>
 <!-- コメントセクション終わり -->
 
+<!-- 評価機能 -->
+<div class="recipe-rating my-4">
+  <%= render 'shared/rating_system', recipe: @recipe %>
+</div>
+
 
 <div class="text-center mt-4">
   <%= link_to "レシピ一覧に戻る", recipes_path, class: "btn btn-outline-primary" %>
