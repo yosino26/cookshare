@@ -40,4 +40,14 @@ class User < ApplicationRecord
     favorites.find_by(recipe: recipe)&.destroy
   end
 
+  # 評価関連
+  def rated?(recipe)
+    ratings.exists?(recipe: recipe)
+  end
+  def rating_for(recipe)
+    ratings.find_by(recipe: recipe)
+  end
+  has_many :ratings, dependent: :destroy
+  has_many :rated_recipes, through: :ratings, source: :recipe
+
 end
