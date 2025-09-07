@@ -14,6 +14,7 @@ class Recipe < ApplicationRecord
   has_many :ingredients, dependent: :destroy, inverse_of: :recipe
   has_many :steps,       dependent: :destroy,  inverse_of: :recipe
   has_many :comments, dependent: :destroy
+  has_many :ratings, dependent: :destroy   # ← これが必須
 
   # ネスト属性
   accepts_nested_attributes_for :ingredients,
@@ -42,6 +43,12 @@ class Recipe < ApplicationRecord
   scope :search_by_title_and_description, ->(keyword) {
       where("title ILIKE ? OR description ILIKE ?", "%#{keyword}%", "%#{keyword}%")
   }
+  # 評価順のスコープ
+  scope :top_rated, -> { 
+    left_joins(:ratings)
+      .group(:id)
+      .order('AVG(ratings.score) DESC NULLS LAST')
+}
 
   
   # 表示用の並び
@@ -65,8 +72,6 @@ class Recipe < ApplicationRecord
   #   end
   # end
 
-
-  
   
   # お気に入り数を取得
   def favorite_count
@@ -77,6 +82,11 @@ class Recipe < ApplicationRecord
   def comment_count
     comments.count
   end
+
+  # 評価数を取得
+  def rating_count
+    ratings.count
+  end
   
   # 人気順のスコープ（お気に入り数順）
   scope :popular, -> { 
@@ -84,5 +94,21 @@ class Recipe < ApplicationRecord
       .group(:id)
       .order('COUNT(favorites.id) DESC')
   }
-end
 
+  # 評価関連
+  # 平均評価を計算
+  def average_rating
+    return 0 if ratings.empty?
+    ratings.average(:score).round(1)
+  end
+  # 星表示用
+  def rating_stars
+    avg = average_rating
+    full_stars = avg.floor
+    half_star = (avg - full_stars) >= 0.5 ? 1 : 0
+    empty_stars = 5 - full_stars - half_star
+  
+    "★" * full_stars + "☆" * half_star + "☆" * empty_stars
+  end
+
+end
