@@ -38,6 +38,7 @@ class RecipesController < ApplicationController
 
   def show
     # @recipeは before_action で設定済み
+    @user   = @recipe.user   # ←@user が nil（→ avatar で落ちる）を防ぐ
   end
 
   def new

@@ -19,5 +19,6 @@ Rails.application.routes.draw do
     member do
       get :favorites  # /users/:id/favorites
     end
+    resource :follow, only: [:create, :destroy] 
   end
 end

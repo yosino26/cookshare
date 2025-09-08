@@ -1,0 +1,15 @@
+<% if user_signed_in? && current_user != user %> 
+  <% if current_user.following?(user) %>
+    <%= link_to user_follow_path(user),
+                class: "btn btn-outline-danger btn-sm",
+                data: { turbo_method: :delete } do %>
+      フォロー中
+    <% end %>
+  <% else %>
+    <%= link_to user_follow_path(user),
+                class: "btn btn-primary btn-sm",
+                data: { turbo_method: :post } do %>
+      フォローする
+    <% end %>
+  <% end %>
+<% end %>

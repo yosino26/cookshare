@@ -1,48 +1,110 @@
 <div class="row">
-  <div class="col-md-8">
-    <div class="card shadow">
-      <% if @recipe.image.present? %>
-        <div class="recipe-image-container">
-          <%= image_tag @recipe.image, class: "card-img-top recipe-main-image", 
-                        alt: @recipe.title %>
-        </div>
-      <% else %>
-        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
-             style="height: 300px;">
-          <span class="text-muted fs-1">🍽️</span>
-        </div>
-      <% end %>
-      
-      <div class="card-body p-4">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-          <h1 class="card-title h3"><%= @recipe.title %></h1>
-          <% if current_user == @recipe.user %>
-            <div class="btn-group">
-              <%= link_to "編集", edit_recipe_path(@recipe), 
-                          class: "btn btn-outline-primary btn-sm" %>
-              <%= link_to "削除", recipe_path(@recipe), method: :delete,
-                          class: "btn btn-outline-danger btn-sm",
-                          confirm: "本当に削除しますか？" %>
+  <!-- フォローセクション -->
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <!-- アバター表示 -->
+          <div class="avatar-large mb-3">
+            <% if @user.avatar.attached? %>
+              <%= image_tag @user.avatar, class: "rounded-circle", style: "width: 120px; height: 120px; object-fit: cover;" %>
+            <% else %>
+              <div class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center text-white"
+                   style="width: 120px; height: 120px; font-size: 48px;">
+                👨‍🍳
+              </div>
+            <% end %>
+          </div>
+          
+          <h4><%= @user.name %></h4>
+          
+          <!-- フォロー・フォロワー数表示 -->
+          <div class="user-stats row text-center mb-3">
+            <div class="col-4">
+              <strong><%= @user.recipe_count %></strong><br>
+              <small class="text-muted">レシピ</small>
+            </div>
+            <div class="col-4">
+              <strong><%= @user.follower_count %></strong><br>
+              <small class="text-muted">フォロワー</small>
+            </div>
+            <div class="col-4">
+              <strong><%= @user.following_count %></strong><br>
+              <small class="text-muted">フォロー中</small>
+            </div>
+          </div>
+          
+          <!-- フォローボタン -->
+          <%= render 'shared/follow_button', user: @user %>
+          
+          <% if @user.bio.present? %>
+            <div class="mt-3">
+              <p class="text-muted"><%= simple_format(@user.bio) %></p>
+            </div>
+          <% end %>
+          
+          <div class="mt-3">
+            <small class="text-muted">
+              参加日: <%= @user.created_at.strftime('%Y年%m月') %>
+            </small>
+          </div>
+          
+          <% if current_user == @user %>
+            <div class="mt-3">
+              <%= link_to "プロフィール編集", edit_user_path(@user), class: "btn btn-outline-primary" %>
             </div>
           <% end %>
         </div>
-        
-        <div class="recipe-meta mb-4">
-          <span class="badge bg-primary me-2">
-            ⏰ <%= @recipe.cooking_time %>分
-          </span>
-          <span class="badge bg-success me-2">
-            👥 <%= @recipe.servings %>人分
-          </span>
-          <span class="badge bg-info">
-            👨‍🍳 <%= @recipe.user.name %>
-          </span>
-        </div>
-        
-        <div class="recipe-description mb-4">
-          <h5>レシピの説明</h5>
-          <p class="card-text"><%= simple_format(@recipe.description) %></p>
-        </div>
+      </div>
+    </div>
+    <!-- フォローセクション終わり -->
+    
+
+      <!-- カードセクション -->
+      <div class="col-md-8">
+        <div class="card shadow">
+          <% if @recipe.image.present? %>
+            <div class="recipe-image-container">
+              <%= image_tag @recipe.image, class: "card-img-top recipe-main-image", 
+                            alt: @recipe.title %>
+            </div>
+          <% else %>
+            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                 style="height: 300px;">
+              <span class="text-muted fs-1">🍽️</span>
+            </div>
+          <% end %>
+          
+          <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <h1 class="card-title h3"><%= @recipe.title %></h1>
+              <% if current_user == @recipe.user %>
+                <div class="btn-group">
+                  <%= link_to "編集", edit_recipe_path(@recipe), 
+                              class: "btn btn-outline-primary btn-sm" %>
+                  <%= link_to "削除", recipe_path(@recipe), method: :delete,
+                              class: "btn btn-outline-danger btn-sm",
+                              confirm: "本当に削除しますか？" %>
+                </div>
+              <% end %>
+            </div>
+            
+            <div class="recipe-meta mb-4">
+              <span class="badge bg-primary me-2">
+                ⏰ <%= @recipe.cooking_time %>分
+              </span>
+              <span class="badge bg-success me-2">
+                👥 <%= @recipe.servings %>人分
+              </span>
+              <span class="badge bg-info">
+                👨‍🍳 <%= @recipe.user.name %>
+              </span>
+            </div>
+            
+            <div class="recipe-description mb-4">
+              <h5>レシピの説明</h5>
+              <p class="card-text"><%= simple_format(@recipe.description) %></p>
+            </div>
         
         <!-- 材料セクション -->
         <% if @recipe.ingredients.any? %>
@@ -90,7 +152,7 @@
       </div>
     </div>
   </div>
-  
+  <!-- 投稿者情報 -->
   <div class="col-md-4">
     <div class="card mb-3">
       <div class="card-body">
