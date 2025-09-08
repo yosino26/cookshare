@@ -34,6 +34,43 @@
   </div>
 </div>
 
+<!-- 検索セクション -->
+<div class="search-section bg-white p-4 rounded shadow-sm mb-4">
+  <%= form_with url: recipes_path, method: :get, local: true, class: "row g-3" do |f| %>
+    <div class="col-md-4">
+      <%= f.text_field :search, value: params[:search], 
+                       class: "form-control", 
+                       placeholder: "レシピ名・材料で検索..." %>
+    </div>
+    
+    <div class="col-md-3">
+      <%= f.select :cooking_time, 
+                   options_for_select([
+                     ['調理時間で絞り込み', ''],
+                     ['15分以内', 15],
+                     ['30分以内', 30],
+                     ['60分以内', 60]
+                   ], params[:cooking_time]),
+                   {}, { class: "form-select" } %>
+    </div>
+    
+    <div class="col-md-3">
+      <%= f.select :sort,
+                   options_for_select([
+                     ['新着順', ''],
+                     ['人気順（お気に入り）', 'popular'],
+                     ['評価順', 'top_rated'],
+                     ['調理時間順', 'cooking_time']
+                   ], params[:sort]),
+                   {}, { class: "form-select" } %>
+    </div>
+    
+    <div class="col-md-2">
+      <%= f.submit "検索", class: "btn btn-primary w-100" %>
+    </div>
+  <% end %>
+</div>
+
 <!-- Cardセクション -->
 <% if @recipes.present? %>
 <div class="row">

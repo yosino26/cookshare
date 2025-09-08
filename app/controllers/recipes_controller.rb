@@ -19,21 +19,25 @@ class RecipesController < ApplicationController
       @recipes = @recipes.by_cooking_time(params[:cooking_time])
     end
     
-    # ソート機能
-    case params[:sort]
-    when 'cooking_time'
-      @recipes = @recipes.order(:cooking_time)
-    when 'popular'
-      @recipes = @recipes.order(created_at: :desc) # 後でいいね数でソート予定
-    else
-      @recipes = @recipes.recent
-    end
-    
-    @recipes = @recipes.page(params[:page]).per(12)
-# 統計情報
-@total_recipes = Recipe.count
-@total_users = User.count
-@recent_recipes = Recipe.recent.limit(6)
+   # ソート処理
+   @recipes = case params[:sort]
+              when 'popular'
+                @recipes.popular
+              when 'top_rated'
+                @recipes.top_rated
+              when 'cooking_time'
+                @recipes.order(:cooking_time)
+              else
+                @recipes.recent
+              end
+  
+   # ページネーション
+   @recipes = @recipes.page(params[:page]).per(12)
+   
+   # 統計情報
+   @total_recipes = Recipe.count
+   @total_users = User.count
+   @recent_recipes = Recipe.recent.limit(6)
   end
 
   def show
