@@ -77,7 +77,21 @@ class RecipesController < ApplicationController
     @recipe.destroy
     redirect_to recipes_path, notice: 'レシピが削除されました。'
   end
-  
+
+  def feed
+    if user_signed_in?
+      # フォローしているユーザーのレシピ + 自分のレシピ
+      following_ids = current_user.followings.pluck(:id)
+      following_ids << current_user.id
+      
+      @recipes = Recipe.includes(:user, :favorites, :ratings)
+                       .where(user_id: following_ids)
+                       .recent
+                       .page(params[:page]).per(10)
+    else
+      redirect_to recipes_path, alert: 'ログインが必要です'
+    end
+  end
 
   private
   def set_recipe

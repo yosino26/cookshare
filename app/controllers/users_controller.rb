@@ -1,7 +1,7 @@
 
 class UsersController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_user, only: [:show, :edit, :update]
+  before_action :set_user, only: [:show, :edit, :update, :favorites]
   before_action :correct_user, only: [:edit, :update]
 
   def show
@@ -21,6 +21,12 @@ class UsersController < ApplicationController
     else
       render :edit, status: :unprocessable_entity
     end
+  end
+
+  # お気に入り一覧ページ追加
+  def favorites
+    @recipes = @user.favorite_recipes.includes(:user, :favorites, :ratings)
+                   .recent.page(params[:page]).per(12)
   end
 
   private

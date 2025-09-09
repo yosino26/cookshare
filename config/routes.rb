@@ -8,6 +8,7 @@ Rails.application.routes.draw do
   resources :recipes do
     collection do
       get :search   # /recipes/search
+      get :feed  # タイムライン追加
     end
     resource :favorite, only: [:create, :destroy]  # /recipes/:recipe_id/favorite
     resources :comments, only: [:create, :destroy]  # 追加

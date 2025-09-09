@@ -24,12 +24,13 @@
       <span class="navbar-toggler-icon"></span>
     </button>
 
-  <div class="collapse navbar-collapse" id="navbarNav">
-    <ul class="navbar-nav me-auto">
-      <li class="nav-item">
-        <%= link_to "レシピ一覧", recipes_path, class: "nav-link" %>
-      </li>
-    </ul>
+     <!-- ナビゲーションメニュー -->
+     <div class="navbar-nav me-auto">
+       <%= link_to "レシピ一覧", recipes_path, class: "nav-link" %>
+       <% if user_signed_in? %>
+         <%= link_to "タイムライン", feed_recipes_path, class: "nav-link" %>
+       <% end %>
+     </div>
   
   <ul class="navbar-nav">
     <% if user_signed_in? %>
