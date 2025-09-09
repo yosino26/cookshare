@@ -1,0 +1,81 @@
+<div class="container">
+  <h2 class="mb-4">フォロー中のレシピ</h2>
+  
+  <% if @recipes.any? %>
+    <div class="timeline">
+      <% @recipes.each do |recipe| %>
+        <div class="card mb-4 shadow-sm">
+          <!-- ユーザー情報ヘッダー -->
+          <div class="card-header bg-white border-0 pb-0">
+            <div class="d-flex align-items-center">
+              <div class="avatar-circle me-3">
+                <% if recipe.user.avatar.attached? %>
+                  <%= image_tag recipe.user.avatar, class: "rounded-circle", 
+                                style: "width: 40px; height: 40px; object-fit: cover;" %>
+                <% else %>
+                  <div class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center text-white"
+                       style="width: 40px; height: 40px; font-size: 16px;">
+                    👨‍🍳
+                  </div>
+                <% end %>
+              </div>
+              <div>
+                <strong><%= link_to recipe.user.name, user_path(recipe.user), class: "text-decoration-none" %></strong><br>
+                <small class="text-muted"><%= time_ago_in_words(recipe.created_at) %>前</small>
+              </div>
+            </div>
+          </div>
+          
+          <!-- レシピ画像 -->
+          <% if recipe.image.attached? %>
+            <%= link_to recipe_path(recipe) do %>
+              <%= image_tag recipe.image, class: "card-img", 
+                            style: "height: 300px; object-fit: cover;" %>
+            <% end %>
+          <% end %>
+          
+          <!-- レシピ情報 -->
+          <div class="card-body">
+            <h5 class="card-title">
+              <%= link_to recipe.title, recipe_path(recipe), class: "text-decoration-none" %>
+            </h5>
+            <p class="card-text"><%= truncate(recipe.description, length: 100) %></p>
+            
+            <!-- メタ情報 -->
+            <div class="recipe-meta mb-3">
+              <span class="badge bg-primary me-1">⏰ <%= recipe.cooking_time %>分</span>
+              <span class="badge bg-success me-1">👥 <%= recipe.servings %>人分</span>
+              <span class="text-warning me-2"><%= recipe.rating_stars %></span>
+              <span class="text-muted">(<%= recipe.rating_count %>)</span>
+            </div>
+            
+            <!-- アクションボタン -->
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="btn-group">
+                <%= render 'shared/favorite_button', recipe: recipe %>
+                <button class="btn btn-outline-secondary btn-sm">
+                  💬 <%= recipe.comment_count %>
+                </button>
+              </div>
+              <%= link_to "詳細を見る", recipe_path(recipe), class: "btn btn-primary btn-sm" %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+      
+      <!-- ページネーション -->
+      <div class="d-flex justify-content-center">
+        <%= paginate @recipes %>
+      </div>
+    </div>
+  <% else %>
+    <div class="text-center py-5">
+      <div class="mb-4">
+        <span style="font-size: 4rem;">📱</span>
+      </div>
+      <h4>タイムラインが空です</h4>
+      <p class="text-muted">他のユーザーをフォローしてレシピをチェックしましょう！</p>
+      <%= link_to "レシピを探す", recipes_path, class: "btn btn-primary" %>
+    </div>
+  <% end %>
+</div>
