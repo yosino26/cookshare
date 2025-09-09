@@ -22,6 +22,12 @@ class UsersController < ApplicationController
       render :edit, status: :unprocessable_entity
     end
   end
+  
+  # お気に入り一覧ページ追加
+  def favorites
+    @recipes = @user.favorite_recipes.includes(:user, :favorites, :ratings)
+                   .recent.page(params[:page]).per(12)
+  end
 
   private
   def set_user
