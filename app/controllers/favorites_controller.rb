@@ -1,4 +1,6 @@
 class FavoritesController < ApplicationController
+  before_action :set_recipe   # ← これを追加
+  
   def create
     current_user.favorite(@recipe)
     redirect_back(fallback_location: @recipe)
@@ -9,7 +11,6 @@ class FavoritesController < ApplicationController
     redirect_back(fallback_location: @recipe)
   end
 
-  
   private
   def set_recipe
     @recipe = Recipe.find(params[:recipe_id])
