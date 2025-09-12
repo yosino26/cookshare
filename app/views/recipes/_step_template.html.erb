@@ -1,0 +1,16 @@
+<template id="step-template">
+  <div class="step-field mb-3">
+    <div class="row align-items-end">
+      <div class="col-md-10">
+        <label class="form-label" for="recipe_steps_NEW_RECORD_instruction">手順</label>
+        <textarea name="recipe[steps_attributes][NEW_RECORD][instruction]"
+                  id="recipe_steps_NEW_RECORD_instruction"
+                  class="form-control" rows="3" placeholder="手順を詳しく" required></textarea>
+        <input type="hidden" name="recipe[steps_attributes][NEW_RECORD][step_number]" value="">
+      </div>
+      <div class="col-md-2">
+        <button type="button" class="btn btn-outline-danger remove-step">削除</button>
+      </div>
+    </div>
+  </div>
+</template>
