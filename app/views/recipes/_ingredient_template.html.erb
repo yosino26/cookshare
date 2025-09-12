@@ -1,0 +1,22 @@
+<template id="ingredient-template">
+  <div class="ingredient-field mb-3">
+    <div class="row align-items-end">
+      <div class="col-md-6">
+        <label class="form-label" for="recipe_ingredients_NEW_RECORD_name">材料名</label>
+        <input type="text" name="recipe[ingredients_attributes][NEW_RECORD][name]"
+               id="recipe_ingredients_NEW_RECORD_name"
+               class="form-control" placeholder="例: トマト" required="required">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="recipe_ingredients_NEW_RECORD_amount">分量</label>
+        <input type="text" name="recipe[ingredients_attributes][NEW_RECORD][amount]"
+               id="recipe_ingredients_NEW_RECORD_amount"
+               class="form-control" placeholder="例: 2個" required="required">
+        <input type="hidden" name="recipe[ingredients_attributes][NEW_RECORD][order_number]" value="">
+      </div>
+      <div class="col-md-2">
+        <button type="button" class="btn btn-outline-danger remove-ingredient">削除</button>
+      </div>
+    </div>
+  </div>
+</template>

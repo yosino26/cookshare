@@ -1,0 +1,13 @@
+<div class="step-field mb-3">
+  <div class="row align-items-end">
+    <div class="col-md-10">
+      <%= f.label :instruction, "手順 #{f.object.step_number || '-'}", class: "form-label" %>
+      <%= f.text_area :instruction, class: "form-control", rows: 3, placeholder: "手順を詳しく説明してください", required: true %>
+      <%= f.hidden_field :step_number, value: (f.object.step_number || 1) %>
+      <%= f.hidden_field :id %>
+    </div>
+    <div class="col-md-2">
+      <button type="button" class="btn btn-outline-danger remove-step">削除</button>
+    </div>
+  </div>
+</div>

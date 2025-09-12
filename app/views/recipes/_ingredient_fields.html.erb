@@ -1,0 +1,17 @@
+<div class="ingredient-field mb-3">
+  <div class="row align-items-end">
+    <div class="col-md-6">
+      <%= f.label :name, "材料名", class: "form-label" %>
+      <%= f.text_field :name, class: "form-control", placeholder: "例: トマト", required: true %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :amount, "分量", class: "form-label" %>
+      <%= f.text_field :amount, class: "form-control", placeholder: "例: 2個", required: true %>
+      <%= f.hidden_field :order_number, value: (f.object.order_number || 1) %>
+      <%= f.hidden_field :id %>
+    </div>
+    <div class="col-md-2">
+      <button type="button" class="btn btn-outline-danger remove-ingredient">削除</button>
+    </div>
+  </div>
+</div>

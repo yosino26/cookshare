@@ -47,8 +47,8 @@ class RecipesController < ApplicationController
 
   def new
     @recipe = current_user.recipes.build
-    @recipe.ingredients.build(order_number: 1) # ← 名前と分量を同じ行で入れる前提の空行
-    @recipe.steps.build(step_number: 1)
+    @recipe.ingredients.build(order_number: 1)  if @recipe.ingredients.empty?
+    @recipe.steps.build(step_number: 1)         if @recipe.steps.empty?
   end
 
   def create
@@ -63,6 +63,8 @@ class RecipesController < ApplicationController
 
   def edit
     # @recipeは before_action で設定済み
+    @recipe.ingredients.build(order_number: 1) if @recipe.ingredients.empty?
+    @recipe.steps.build(step_number: 1)        if @recipe.steps.empty?
   end
 
   def update
@@ -100,7 +102,8 @@ class RecipesController < ApplicationController
 
   def recipe_params
     params.require(:recipe).permit(
-      :title, :description, :cooking_time, :servings, :image,
+      :title, :description, :cooking_time, :servings, :image, 
+      category_ids: [],
       ingredients_attributes: [:id, :name, :amount, :order_number, :_destroy],
       steps_attributes:       [:id, :instruction, :step_number, :_destroy]
     )

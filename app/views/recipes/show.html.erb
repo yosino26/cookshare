@@ -128,6 +128,12 @@
                 👨‍🍳 <%= @recipe.user.name %>
               </span>
             </div>
+
+            <!-- カテゴリ表示追加 -->
+            <% @recipe.categories.each do |category| %>
+            <%= link_to category.name, recipes_path(category: category.id), 
+                        class: "badge bg-secondary text-decoration-none me-1" %>
+            <% end %>
             
             <div class="recipe-description mb-4">
               <h5>レシピの説明</h5>

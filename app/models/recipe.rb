@@ -15,6 +15,9 @@ class Recipe < ApplicationRecord
   has_many :steps,       dependent: :destroy,  inverse_of: :recipe
   has_many :comments, dependent: :destroy
   has_many :ratings, dependent: :destroy   # ← これが必須
+  # 関連(カテゴリ機能)
+  has_many :recipe_categories, dependent: :destroy
+  has_many :categories, through: :recipe_categories
 
   # ネスト属性
   accepts_nested_attributes_for :ingredients,
@@ -109,6 +112,10 @@ class Recipe < ApplicationRecord
     empty_stars = 5 - full_stars - half_star
   
     "★" * full_stars + "☆" * half_star + "☆" * empty_stars
+  end
+  # カテゴリ名の配列を取得
+  def category_names
+    categories.pluck(:name)
   end
 
 end
