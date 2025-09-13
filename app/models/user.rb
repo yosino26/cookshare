@@ -1,8 +1,9 @@
 class User < ApplicationRecord
+  include Reportable
+
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
 
-         
   # バリデーション追加
   validates :name, presence: true, length: { maximum: 20 }
   validates :bio, length: { maximum: 500 }
@@ -11,6 +12,10 @@ class User < ApplicationRecord
   has_many :recipes, dependent: :destroy
   has_many :comments, dependent: :destroy
   has_one_attached :avatar
+  # レポート機能の関連付け（追加）
+  has_many :sent_reports, class_name: 'Report', foreign_key: 'reporter_id', dependent: :destroy
+  has_many :admin_handled_reports, class_name: 'Report', foreign_key: 'admin_user_id', dependent: :nullify
+
 
   # ユーザーの投稿数を取得するメソッド
   def recipe_count
@@ -79,6 +84,23 @@ class User < ApplicationRecord
 
   def following_count
      followings.count
+  end
+
+  # 管理者機能
+  def admin?
+    admin == true
+  end
+  # 管理者にする
+  def make_admin!
+    update!(admin: true)
+  end
+  # 管理者権限を剥奪
+  def remove_admin!
+    update!(admin: false)
+  end
+  # 統計情報（追加）
+  def reports_handled_count
+    admin_handled_reports.count
   end
 
 end

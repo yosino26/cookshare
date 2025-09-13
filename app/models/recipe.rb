@@ -1,8 +1,9 @@
 class Recipe < ApplicationRecord
+  include Reportable
+
   # リレーション
   belongs_to :user
-
-  # お気に入り関連のリレーション追加
+  # お気に入り関連のリレーション
   has_many :favorites, dependent: :destroy
   #中間テーブルを経由して関連付け
   has_many :favorited_by, through: :favorites, source: :user   
@@ -32,11 +33,11 @@ class Recipe < ApplicationRecord
   validates :title,       presence: true, length: { maximum: 30 }
   validates :description, presence: true, length: { maximum: 1000 }
   validates :cooking_time,
-    presence: true,
-    numericality: { greater_than: 0, less_than: 1000 }
+             presence: true,
+             numericality: { greater_than: 0, less_than: 1000 }
   validates :servings,
-    presence: true,
-    numericality: { greater_than: 0, less_than_or_equal_to: 20 }
+             presence: true,
+             numericality: { greater_than: 0, less_than_or_equal_to: 20 }
 
   # スコープ
   scope :recent, -> { order(created_at: :desc) }
@@ -52,7 +53,6 @@ class Recipe < ApplicationRecord
       .group(:id)
       .order('AVG(ratings.score) DESC NULLS LAST')
 }
-
   
   # 表示用の並び
   def ordered_ingredients
@@ -75,17 +75,14 @@ class Recipe < ApplicationRecord
   #   end
   # end
 
-  
   # お気に入り数を取得
   def favorite_count
     favorites.count
   end
-
   # コメント数を取得
   def comment_count
     comments.count
   end
-
   # 評価数を取得
   def rating_count
     ratings.count
@@ -116,6 +113,14 @@ class Recipe < ApplicationRecord
   # カテゴリ名の配列を取得
   def category_names
     categories.pluck(:name)
+  end
+
+  # レポート機能関連
+  def safe_to_display?
+    pending_reports_count == 0
+  end
+  def requires_moderation?
+    pending_reports_count > 0
   end
 
 end
