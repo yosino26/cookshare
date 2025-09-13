@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_09_11_060132) do
+ActiveRecord::Schema[7.1].define(version: 2025_09_13_132029) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -128,6 +128,26 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_11_060132) do
     t.index ["user_id"], name: "index_recipes_on_user_id"
   end
 
+  create_table "reports", force: :cascade do |t|
+    t.bigint "reporter_id", null: false, comment: "報告したユーザー"
+    t.string "reportable_type", null: false
+    t.bigint "reportable_id", null: false, comment: "報告対象"
+    t.text "reason", null: false, comment: "報告理由"
+    t.text "description", comment: "詳細説明"
+    t.string "status", default: "pending", null: false, comment: "処理状況"
+    t.bigint "admin_user_id", comment: "対応した管理者"
+    t.text "admin_response", comment: "管理者からの回答"
+    t.datetime "resolved_at", comment: "解決日時"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["admin_user_id"], name: "index_reports_on_admin_user_id"
+    t.index ["created_at"], name: "index_reports_on_created_at"
+    t.index ["reportable_type", "reportable_id"], name: "index_reports_on_reportable"
+    t.index ["reporter_id", "reportable_type", "reportable_id"], name: "index_reports_on_reporter_and_reportable", unique: true
+    t.index ["reporter_id"], name: "index_reports_on_reporter_id"
+    t.index ["status"], name: "index_reports_on_status"
+  end
+
   create_table "steps", force: :cascade do |t|
     t.text "instruction", null: false
     t.bigint "recipe_id", null: false
@@ -148,6 +168,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_11_060132) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.text "bio"
+    t.boolean "admin", default: false, null: false
+    t.index ["admin"], name: "index_users_on_admin"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
@@ -166,5 +188,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_11_060132) do
   add_foreign_key "recipe_categories", "categories"
   add_foreign_key "recipe_categories", "recipes"
   add_foreign_key "recipes", "users"
+  add_foreign_key "reports", "users", column: "admin_user_id"
+  add_foreign_key "reports", "users", column: "reporter_id"
   add_foreign_key "steps", "recipes"
 end
