@@ -1,0 +1,397 @@
+<% content_for :page_title, "ユーザー管理" %>
+<% content_for :page_description, "全ユーザーの管理・統計表示" %>
+
+<!-- 統計サマリー -->
+<div class="row mb-4">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-body">
+        <div class="row text-center">
+          <div class="col-md-2">
+            <h4 class="text-primary mb-0"><%= @stats[:total] %></h4>
+            <small class="text-muted">総ユーザー数</small>
+          </div>
+          <div class="col-md-2">
+            <h4 class="text-success mb-0"><%= @stats[:active] %></h4>
+            <small class="text-muted">アクティブ</small>
+          </div>
+          <div class="col-md-2">
+            <h4 class="text-warning mb-0"><%= @stats[:suspended] %></h4>
+            <small class="text-muted">停止中</small>
+          </div>
+          <div class="col-md-2">
+            <h4 class="text-info mb-0"><%= @stats[:today] %></h4>
+            <small class="text-muted">今日登録</small>
+          </div>
+          <div class="col-md-2">
+            <h4 class="text-secondary mb-0"><%= @stats[:week] %></h4>
+            <small class="text-muted">今週登録</small>
+          </div>
+          <div class="col-md-2">
+            <h4 class="text-danger mb-0"><%= @stats[:admin] %></h4>
+            <small class="text-muted">管理者</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- フィルター・検索フォーム -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">
+      <i class="fas fa-filter me-2"></i>フィルター・検索
+    </h5>
+  </div>
+  <div class="card-body">
+    <%= form_with url: admin_users_path, method: :get, local: true, class: "row g-3" do |form| %>
+      <!-- ステータスフィルター -->
+      <div class="col-md-2">
+        <%= form.label :status, "ステータス", class: "form-label" %>
+        <%= form.select :status, 
+            options_for_select([
+              ['全て', ''],
+              ['アクティブ', 'active'],
+              ['停止中', 'suspended']
+            ], @filter_params[:status]), 
+            {}, 
+            { class: "form-select" } %>
+      </div>
+
+      <!-- 権限フィルター -->
+      <div class="col-md-2">
+        <%= form.label :role, "権限", class: "form-label" %>
+        <%= form.select :role, 
+            options_for_select([
+              ['全て', ''],
+              ['一般ユーザー', 'user'],
+              ['管理者', 'admin']
+            ], @filter_params[:role]), 
+            {}, 
+            { class: "form-select" } %>
+      </div>
+
+      <!-- 登録期間フィルター -->
+      <div class="col-md-2">
+        <%= form.label :period, "登録期間", class: "form-label" %>
+        <%= form.select :period, 
+            options_for_select([
+              ['全期間', ''],
+              ['今日', 'today'],
+              ['今週', 'week'],
+              ['今月', 'month'],
+              ['3ヶ月以内', '3months']
+            ], @filter_params[:period]), 
+            {}, 
+            { class: "form-select" } %>
+      </div>
+
+      <!-- アクティビティフィルター -->
+      <div class="col-md-2">
+        <%= form.label :activity, "アクティビティ", class: "form-label" %>
+        <%= form.select :activity, 
+            options_for_select([
+              ['全て', ''],
+              ['レシピ投稿あり', 'has_recipes'],
+              ['コメント投稿あり', 'has_comments'],
+              ['非アクティブ', 'inactive']
+            ], @filter_params[:activity]), 
+            {}, 
+            { class: "form-select" } %>
+      </div>
+
+      <!-- ソート順 -->
+      <div class="col-md-2">
+        <%= form.label :sort, "並び順", class: "form-label" %>
+        <%= form.select :sort, 
+            options_for_select([
+              ['登録日（新）', 'created_desc'],
+              ['登録日（古）', 'created_asc'],
+              ['名前順', 'name'],
+              ['レシピ数順', 'recipes_count'],
+              ['最終ログイン順', 'last_login']
+            ], @filter_params[:sort]), 
+            {}, 
+            { class: "form-select" } %>
+      </div>
+
+      <!-- 検索・リセットボタン -->
+      <div class="col-md-2 d-flex align-items-end">
+        <div class="btn-group w-100" role="group">
+          <%= form.submit "検索", class: "btn btn-primary" %>
+          <%= link_to "リセット", admin_users_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+
+      <!-- キーワード検索 -->
+      <div class="col-md-8">
+        <%= form.label :search, "キーワード検索", class: "form-label" %>
+        <%= form.text_field :search, 
+            value: @filter_params[:search], 
+            placeholder: "名前、メールアドレスで検索...", 
+            class: "form-control" %>
+      </div>
+
+      <!-- 表示件数 -->
+      <div class="col-md-4">
+        <%= form.label :per_page, "表示件数", class: "form-label" %>
+        <%= form.select :per_page, 
+            options_for_select([
+              ['20件', '20'],
+              ['50件', '50'],
+              ['100件', '100']
+            ], @filter_params[:per_page] || '20'), 
+            {}, 
+            { class: "form-select" } %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- ユーザー一覧 -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+      <i class="fas fa-users me-2"></i>ユーザー一覧
+      <span class="badge bg-secondary ms-2"><%= @users.total_count %>人</span>
+    </h5>
+    <div>
+      <%= link_to admin_users_export_path(format: :csv, **@filter_params), 
+          class: "btn btn-outline-success btn-sm" do %>
+        <i class="fas fa-download me-1"></i>CSVエクスポート
+      <% end %>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <% if @users.any? %>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th width="60">ID</th>
+              <th>ユーザー</th>
+              <th width="100">ステータス</th>
+              <th width="80">権限</th>
+              <th width="100">統計</th>
+              <th width="120">登録日</th>
+              <th width="120">最終ログイン</th>
+              <th width="120">アクション</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @users.each do |user| %>
+              <tr class="<%= 'table-warning' if user.suspended? %>">
+                <td>
+                  <%= link_to user.id, admin_user_path(user), 
+                      class: "text-decoration-none fw-medium" %>
+                </td>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="me-3">
+                      <% if user.avatar.attached? %>
+                        <%= image_tag user.avatar, 
+                            class: "rounded-circle", size: "40x40" %>
+                      <% else %>
+                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" 
+                             style="width: 40px; height: 40px;">
+                          <i class="fas fa-user text-white"></i>
+                        </div>
+                      <% end %>
+                    </div>
+                    <div>
+                      <div class="fw-medium">
+                        <%= link_to user.display_name, admin_user_path(user), 
+                            class: "text-decoration-none" %>
+                      </div>
+                      <small class="text-muted"><%= user.email %></small>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <% if user.suspended? %>
+                    <span class="badge bg-warning">停止中</span>
+                  <% else %>
+                    <span class="badge bg-success">アクティブ</span>
+                  <% end %>
+                </td>
+                <td>
+                  <% if user.admin? %>
+                    <span class="badge bg-danger">管理者</span>
+                  <% else %>
+                    <span class="badge bg-secondary">一般</span>
+                  <% end %>
+                </td>
+                <td>
+                  <div class="text-center">
+                    <div><%= user.recipes.count %> レシピ</div>
+                    <div><%= user.comments.count %> コメント</div>
+                  </div>
+                </td>
+                <td>
+                  <small class="text-muted">
+                    <%= user.created_at.strftime("%m/%d") %><br>
+                    <%= user.created_at.strftime("%H:%M") %>
+                  </small>
+                </td>
+                <td>
+                  <small class="text-muted">
+                    <% if user.last_sign_in_at %>
+                      <%= user.last_sign_in_at.strftime("%m/%d") %><br>
+                      <%= user.last_sign_in_at.strftime("%H:%M") %>
+                    <% else %>
+                      未ログイン
+                    <% end %>
+                  </small>
+                </td>
+                <td>
+                  <div class="btn-group" role="group">
+                    <%= link_to admin_user_path(user), 
+                        class: "btn btn-sm btn-outline-primary" do %>
+                      <i class="fas fa-eye"></i>
+                    <% end %>
+                    
+                    <div class="btn-group" role="group">
+                      <button type="button" 
+                              class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                              data-bs-toggle="dropdown">
+                        <i class="fas fa-cog"></i>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <% unless user.admin? %>
+                          <% if user.suspended? %>
+                            <li>
+                              <%= link_to unsuspend_admin_user_path(user), 
+                                  method: :patch,
+                                  class: "dropdown-item",
+                                  data: { turbo_method: :patch } do %>
+                                <i class="fas fa-unlock text-success me-2"></i>停止解除
+                              <% end %>
+                            </li>
+                          <% else %>
+                            <li>
+                              <a href="#" class="dropdown-item" 
+                                 data-bs-toggle="modal" 
+                                 data-bs-target="#suspendModal<%= user.id %>">
+                                <i class="fas fa-user-slash text-warning me-2"></i>停止する
+                              </a>
+                            </li>
+                          <% end %>
+                          <li><hr class="dropdown-divider"></li>
+                          <li>
+                            <%= link_to promote_admin_user_path(user), 
+                                method: :patch,
+                                class: "dropdown-item",
+                                data: { 
+                                  turbo_method: :patch,
+                                  confirm: "#{user.display_name}さんを管理者に昇格させますか？"
+                                } do %>
+                              <i class="fas fa-user-crown text-info me-2"></i>管理者に昇格
+                            <% end %>
+                          </li>
+                        <% else %>
+                          <li>
+                            <span class="dropdown-item text-muted">
+                              <i class="fas fa-info-circle me-2"></i>管理者は操作できません
+                            </span>
+                          </li>
+                        <% end %>
+                      </ul>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              
+              <!-- 停止モーダル -->
+              <% unless user.admin? || user.suspended? %>
+                <div class="modal fade" id="suspendModal<%= user.id %>" tabindex="-1">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">
+                          <i class="fas fa-user-slash text-warning me-2"></i>
+                          ユーザーを停止
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <%= form_with url: suspend_admin_user_path(user), 
+                          method: :patch do |form| %>
+                        <div class="modal-body">
+                          <div class="alert alert-warning">
+                            <strong><%= user.display_name %></strong>さんのアカウントを停止しますか？
+                          </div>
+                          <div class="mb-3">
+                            <%= form.label :suspend_reason, "停止理由", class: "form-label" %>
+                            <%= form.text_area :suspend_reason, rows: 3, class: "form-control", 
+                                placeholder: "停止理由を入力..." %>
+                          </div>
+                          <div class="mb-3">
+                            <%= form.label :suspend_duration, "停止期間", class: "form-label" %>
+                            <%= form.select :suspend_duration, 
+                                options_for_select([
+                                  ['1日', '1'],
+                                  ['3日', '3'],
+                                  ['1週間', '7'],
+                                  ['1ヶ月', '30'],
+                                  ['無期限', '0']
+                                ]), 
+                                {},
+                                { class: "form-select" } %>
+                          </div>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                          <%= form.submit "停止する", class: "btn btn-warning" %>
+                        </div>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ページネーション -->
+      <div class="card-footer">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="text-muted">
+            <%= page_entries_info @users, entry_name: 'ユーザー' %>
+          </div>
+          <div>
+            <%= paginate @users, theme: 'twitter-bootstrap-4' %>
+          </div>
+        </div>
+      </div>
+    <% else %>
+      <!-- 空状態 -->
+      <div class="text-center py-5">
+        <i class="fas fa-users text-muted fa-3x mb-3"></i>
+        <h5 class="text-muted">ユーザーが見つかりません</h5>
+        <p class="text-muted">
+          <% if @filter_params.any? { |k, v| v.present? } %>
+            検索条件を変更して再度お試しください。
+          <% else %>
+            まだユーザーが登録されていません。
+          <% end %>
+        </p>
+        <% if @filter_params.any? { |k, v| v.present? } %>
+          <%= link_to "フィルターをリセット", admin_users_path, class: "btn btn-outline-primary" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // 自動検索（エンターキー）
+  document.querySelector('input[name="search"]')?.addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') {
+      this.closest('form').submit();
+    }
+  });
+});
+</script>
