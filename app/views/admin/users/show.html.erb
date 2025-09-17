@@ -1,0 +1,394 @@
+<% content_for :page_title, @user.display_name %>
+<% content_for :page_description, "ユーザー詳細情報・アクティビティ履歴" %>
+<% content_for :page_actions do %>
+  <%= link_to admin_users_path, class: "btn btn-outline-secondary" do %>
+    <i class="fas fa-arrow-left me-1"></i>一覧に戻る
+  <% end %>
+<% end %>
+
+<%
+@breadcrumbs = [
+  { name: "ダッシュボード", path: admin_root_path },
+  { name: "ユーザー管理", path: admin_users_path },
+  { name: @user.display_name, path: admin_user_path(@user) }
+]
+%>
+
+<div class="row">
+  <!-- メイン情報 -->
+  <div class="col-lg-8">
+    <!-- ユーザー基本情報 -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3 text-center">
+            <% if @user.avatar.attached? %>
+              <%= image_tag @user.avatar,
+                    class: "rounded-circle mb-3",
+                    style: "width: 120px; height: 120px; object-fit: cover;" %>
+            <% else %>
+              <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto mb-3"
+                   style="width: 120px; height: 120px;">
+                <i class="fas fa-user text-white fa-3x"></i>
+              </div>
+            <% end %>
+
+            <div class="d-flex justify-content-center gap-1 mb-3">
+              <% if @user.admin? %>
+                <span class="badge bg-danger">管理者</span>
+              <% else %>
+                <span class="badge bg-secondary">一般ユーザー</span>
+              <% end %>
+
+              <% if @user.suspended? %>
+                <span class="badge bg-warning">停止中</span>
+              <% else %>
+                <span class="badge bg-success">アクティブ</span>
+              <% end %>
+            </div>
+          </div>
+
+          <div class="col-md-9">
+            <h4 class="mb-3"><%= @user.display_name %></h4>
+
+            <div class="row mb-3">
+              <div class="col-sm-3 text-muted">メールアドレス:</div>
+              <div class="col-sm-9"><%= @user.email %></div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-sm-3 text-muted">登録日:</div>
+              <div class="col-sm-9">
+                <%= @user.created_at.strftime("%Y年%m月%d日 %H:%M") %>
+                (<%= time_ago_in_words(@user.created_at) %>前)
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-sm-3 text-muted">最終ログイン:</div>
+              <div class="col-sm-9">
+                <% if @user.last_sign_in_at %>
+                  <%= @user.last_sign_in_at.strftime("%Y年%m月%d日 %H:%M") %>
+                  (<%= time_ago_in_words(@user.last_sign_in_at) %>前)
+                <% else %>
+                  <span class="text-muted">未ログイン</span>
+                <% end %>
+              </div>
+            </div>
+
+            <% if @user.bio.present? %>
+              <div class="row mb-3">
+                <div class="col-sm-3 text-muted">自己紹介:</div>
+                <div class="col-sm-9">
+                  <p class="mb-0" style="white-space: pre-line;"><%= @user.bio %></p>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- タブナビゲーション -->
+    <div class="card">
+      <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" id="userTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="recipes-tab" data-bs-toggle="tab" data-bs-target="#recipes" type="button" role="tab">
+              <i class="fas fa-book me-1"></i>レシピ (<%= @user_stats[:recipes_count] %>)
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab">
+              <i class="fas fa-comments me-1"></i>コメント (<%= @user_stats[:comments_count] %>)
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button" role="tab">
+              <i class="fas fa-flag me-1"></i>関連レポート (<%= @user_stats[:reports_count] %>)
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card-body">
+        <div class="tab-content" id="userTabContent">
+          <!-- レシピタブ -->
+          <div class="tab-pane fade show active" id="recipes" role="tabpanel">
+            <% if @user.recipes.any? %>
+              <div class="row">
+                <% @user.recipes.includes(:user, image_attachment: :blob).limit(6).each do |recipe| %>
+                  <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                      <div class="row g-0">
+                        <div class="col-4">
+                          <% if recipe.image.attached? %>
+                            <%= image_tag recipe.image, class: "img-fluid rounded-start h-100", style: "object-fit: cover;" %>
+                          <% else %>
+                            <div class="bg-light rounded-start h-100 d-flex align-items-center justify-content-center">
+                              <i class="fas fa-utensils text-muted"></i>
+                            </div>
+                          <% end %>
+                        </div>
+                        <div class="col-8">
+                          <div class="card-body p-3">
+                            <h6 class="card-title mb-2">
+                              <%= link_to recipe.title, admin_recipe_path(recipe), class: "text-decoration-none" %>
+                            </h6>
+                            <p class="card-text small text-muted mb-2"><%= truncate(recipe.description, length: 80) %></p>
+                            <div class="d-flex justify-content-between text-muted small">
+                              <span><i class="fas fa-heart"></i> <%= recipe.favorites_count %></span>
+                              <span><i class="fas fa-comment"></i> <%= recipe.comments_count %></span>
+                            </div>
+                          </div>
+                        </div>
+                      </div> <!-- /row g-0 -->
+                    </div> <!-- /card -->
+                  </div> <!-- /col -->
+                <% end %>
+              </div>
+
+              <% if @user.recipes.count > 6 %>
+                <div class="text-center mt-3">
+                  <%= link_to admin_recipes_path(user_id: @user.id), class: "btn btn-outline-primary" do %>
+                    全てのレシピを見る (<%= @user.recipes.count %>件)
+                  <% end %>
+                </div>
+              <% end %>
+            <% else %>
+              <div class="text-center text-muted py-4">
+                <i class="fas fa-book fa-3x mb-3"></i>
+                <p class="mb-0">まだレシピを投稿していません</p>
+              </div>
+            <% end %>
+          </div>
+
+          <!-- コメントタブ -->
+          <div class="tab-pane fade" id="comments" role="tabpanel">
+            <% if @user.comments.any? %>
+              <% @user.comments.includes(:recipe).order(created_at: :desc).limit(10).each do |comment| %>
+                <div class="border-bottom pb-3 mb-3">
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0">
+                      <%= link_to comment.recipe.title, admin_recipe_path(comment.recipe), class: "text-decoration-none" %>
+                    </h6>
+                    <small class="text-muted"><%= time_ago_in_words(comment.created_at) %>前</small>
+                  </div>
+                  <p class="mb-0 text-muted small" style="white-space: pre-line;">
+                    <%= truncate(comment.content, length: 150) %>
+                  </p>
+                </div>
+              <% end %>
+
+              <% if @user.comments.count > 10 %>
+                <div class="text-center">
+                  <%= link_to admin_comments_path(user_id: @user.id), class: "btn btn-outline-primary" do %>
+                    全てのコメントを見る (<%= @user.comments.count %>件)
+                  <% end %>
+                </div>
+              <% end %>
+            <% else %>
+              <div class="text-center text-muted py-4">
+                <i class="fas fa-comments fa-3x mb-3"></i>
+                <p class="mb-0">まだコメントを投稿していません</p>
+              </div>
+            <% end %>
+          </div>
+
+          <!-- レポートタブ -->
+          <div class="tab-pane fade" id="reports" role="tabpanel">
+            <% if @related_reports.any? %>
+              <div class="accordion" id="reportsAccordion">
+                <% @related_reports.group_by(&:reportable_type).each_with_index do |(type, reports), index| %>
+                  <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading<%= index %>">
+                      <button class="accordion-button <%= 'collapsed' unless index == 0 %>" type="button"
+                              data-bs-toggle="collapse" data-bs-target="#collapse<%= index %>">
+                        <%= type == 'Recipe' ? 'レシピ' : type == 'Comment' ? 'コメント' : 'ユーザー' %>への報告
+                        <span class="badge bg-secondary ms-2"><%= reports.count %>件</span>
+                      </button>
+                    </h2>
+                    <div id="collapse<%= index %>" class="accordion-collapse collapse <%= 'show' if index == 0 %>"
+                         data-bs-parent="#reportsAccordion">
+                      <div class="accordion-body">
+                        <% reports.each do |report| %>
+                          <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="flex-grow-1">
+                              <span class="badge bg-<%= report.status_color %> me-2"><%= report.status_japanese %></span>
+                              <%= truncate(report.reason, length: 100) %><br>
+                              <small class="text-muted">
+                                by <%= report.reporter.display_name %> • <%= time_ago_in_words(report.created_at) %>前
+                              </small>
+                            </div>
+                            <div>
+                              <%= link_to admin_report_path(report), class: "btn btn-sm btn-outline-primary" do %>
+                                <i class="fas fa-eye"></i>
+                              <% end %>
+                            </div>
+                          </div>
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+
+              <!-- 対象への他のレポート（追加セクション） -->
+              <% if @target_reports.present? %>
+                <div class="mt-4">
+                  <h6 class="text-muted">この対象への他のレポート</h6>
+                  <ul class="list-unstyled mb-0">
+                    <% @target_reports.each do |report| %>
+                      <li class="mb-2">
+                        <%= link_to admin_report_path(report), class: "text-decoration-none d-flex align-items-start gap-2" do %>
+                          <span class="badge bg-<%= report.status_color %> flex-shrink-0"><%= report.status_japanese %></span>
+                          <span class="small">
+                            <%= truncate(strip_tags(report.reason.to_s), length: 60) %><br>
+                            <small class="text-muted">
+                              by <%= report.reporter&.display_name || '（不明）' %> ・ <%= time_ago_in_words(report.created_at) %>前
+                            </small>
+                          </span>
+                        <% end %>
+                      </li>
+                    <% end %>
+                  </ul>
+                </div>
+              <% end %>
+
+            <% else %>
+              <div class="text-center text-muted py-4">
+                <i class="fas fa-flag fa-3x mb-3"></i>
+                <p class="mb-0">関連するレポートはありません</p>
+              </div>
+            <% end %>
+          </div> <!-- /tab-pane reports -->
+        </div> <!-- /tab-content -->
+      </div> <!-- /card-body -->
+    </div> <!-- /card -->
+  </div> <!-- /col-lg-8 -->
+
+  <!-- サイドバー -->
+  <div class="col-lg-4">
+    <!-- 統計情報 -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>統計情報</h5>
+      </div>
+      <div class="card-body">
+        <div class="row text-center">
+          <div class="col-6 mb-3">
+            <h4 class="text-primary mb-0"><%= @user_stats[:recipes_count] %></h4>
+            <small class="text-muted">レシピ</small>
+          </div>
+          <div class="col-6 mb-3">
+            <h4 class="text-success mb-0"><%= @user_stats[:favorites_count] %></h4>
+            <small class="text-muted">お気に入り</small>
+          </div>
+          <div class="col-6 mb-3">
+            <h4 class="text-info mb-0"><%= @user_stats[:followers_count] %></h4>
+            <small class="text-muted">フォロワー</small>
+          </div>
+          <div class="col-6">
+            <h4 class="text-warning mb-0"><%= @user_stats[:comments_count] %></h4>
+            <small class="text-muted">コメント</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- アクション -->
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-cog me-2"></i>管理アクション</h5>
+      </div>
+      <div class="card-body">
+        <% unless @user.admin? %>
+          <div class="d-grid gap-2">
+            <% if @user.suspended? %>
+              <%= link_to unsuspend_admin_user_path(@user),
+                    class: "btn btn-success",
+                    data: { turbo_method: :patch, confirm: "#{@user.display_name}さんの停止を解除しますか？" } do %>
+                <i class="fas fa-unlock me-1"></i>停止を解除
+              <% end %>
+            <% else %>
+              <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#suspendModal">
+                <i class="fas fa-user-slash me-1"></i>ユーザーを停止
+              </button>
+            <% end %>
+
+            <%= link_to promote_admin_user_path(@user),
+                  class: "btn btn-info",
+                  data: { turbo_method: :patch, confirm: "#{@user.display_name}さんを管理者に昇格させますか？" } do %>
+              <i class="fas fa-user-crown me-1"></i>管理者に昇格
+            <% end %>
+          </div>
+        <% else %>
+          <div class="alert alert-info mb-0">
+            <i class="fas fa-info-circle me-2"></i>管理者ユーザーは操作できません
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div> <!-- /col-lg-4 -->
+</div> <!-- /row -->
+
+<!-- 停止モーダル -->
+<% unless @user.admin? || @user.suspended? %>
+  <div class="modal fade" id="suspendModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="fas fa-user-slash text-warning me-2"></i>ユーザーを停止
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+        </div>
+        <%= form_with url: suspend_admin_user_path(@user), method: :patch do |form| %>
+          <div class="modal-body">
+            <div class="alert alert-warning">
+              <strong><%= @user.display_name %></strong>さんのアカウントを停止しますか？
+            </div>
+            <div class="mb-3">
+              <%= form.label :suspend_reason, "停止理由", class: "form-label" %>
+              <%= form.text_area :suspend_reason, rows: 3, class: "form-control", placeholder: "停止理由を入力してください..." %>
+            </div>
+            <div class="mb-3">
+              <%= form.label :suspend_duration, "停止期間", class: "form-label" %>
+              <%= form.select :suspend_duration,
+                    options_for_select([['1日','1'],['3日','3'],['1週間','7'],['1ヶ月','30'],['無期限','0']]),
+                    { prompt: '期間を選択...' },
+                    { class: "form-select" } %>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+            <%= form.submit "停止する", class: "btn btn-warning" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Bootstrapタブ（data属性で動くが、明示初期化してもOK）
+  const triggerTabList = document.querySelectorAll('#userTabs button');
+  triggerTabList.forEach(triggerEl => {
+    const tabTrigger = new bootstrap.Tab(triggerEl);
+    triggerEl.addEventListener('click', event => {
+      event.preventDefault();
+      tabTrigger.show();
+    });
+  });
+
+  document.getElementById('comments-tab')?.addEventListener('shown.bs.tab', function() {
+    console.log('Comments tab shown');
+  });
+
+  document.getElementById('reports-tab')?.addEventListener('shown.bs.tab', function() {
+    console.log('Reports tab shown');
+  });
+});
+</script>
+
