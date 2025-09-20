@@ -30,6 +30,10 @@
        <% if user_signed_in? %>
          <%= link_to "タイムライン", feed_recipes_path, class: "nav-link" %>
        <% end %>
+
+       <% if current_user&.admin? %>
+         <%= link_to "管理者画面", admin_root_path, class: "nav-link" %>
+       <% end %>
      </div>
   
   <ul class="navbar-nav">
