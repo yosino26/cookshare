@@ -46,7 +46,9 @@ Rails.application.routes.draw do
         patch :toggle_admin  # 管理者権限の付与・剥奪
       end
     end  
-    # ← これを追加
+  
     resources :recipes, only: [:index, :show, :edit, :update, :destroy]
+    # ← 追加
+    resources :comments, only: [:index, :destroy]
   end 
 end
