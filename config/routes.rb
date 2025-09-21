@@ -41,14 +41,19 @@ Rails.application.routes.draw do
       end
     end
     
+    # CSV エクスポート（ヘルパーを admin_users_export_path にする）
+    get 'users/export', to: 'users#export', as: :users_export
     resources :users, only: [:index, :show, :edit, :update] do
       member do
         patch :toggle_admin  # 管理者権限の付与・剥奪
+        patch :suspend
+        patch :unsuspend
+        patch :promote
       end
-    end  
+    end
   
     resources :recipes, only: [:index, :show, :edit, :update, :destroy]
-    # ← 追加
+    
     resources :comments, only: [:index, :destroy]
   end 
 end
