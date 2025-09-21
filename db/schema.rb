@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_09_13_132029) do
+ActiveRecord::Schema[7.1].define(version: 2025_09_21_195929) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -169,9 +169,20 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_13_132029) do
     t.datetime "updated_at", null: false
     t.text "bio"
     t.boolean "admin", default: false, null: false
+    t.boolean "suspended", default: false, null: false
+    t.text "suspend_reason"
+    t.datetime "suspend_until"
+    t.integer "sign_in_count", default: 0, null: false
+    t.datetime "current_sign_in_at"
+    t.datetime "last_sign_in_at"
+    t.inet "current_sign_in_ip"
+    t.inet "last_sign_in_ip"
     t.index ["admin"], name: "index_users_on_admin"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["last_sign_in_at"], name: "index_users_on_last_sign_in_at"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["suspend_until"], name: "index_users_on_suspend_until"
+    t.index ["suspended"], name: "index_users_on_suspended"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

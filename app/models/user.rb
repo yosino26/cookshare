@@ -2,7 +2,8 @@ class User < ApplicationRecord
   include Reportable
 
   devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :validatable
+         :recoverable, :rememberable, :validatable,
+         :trackable # 例：既存に追加            
 
   # バリデーション追加
   validates :name, presence: true, length: { maximum: 20 }

@@ -37,6 +37,7 @@
   </div>
 </div>
 
+
 <!-- フィルター・検索フォーム -->
 <div class="card mb-4">
   <div class="card-header">
@@ -360,7 +361,7 @@
             <%= page_entries_info @users, entry_name: 'ユーザー' %>
           </div>
           <div>
-            <%= paginate @users, theme: 'twitter-bootstrap-4' %>
+            <%= paginate @users, theme: 'bootstrap4', params: (@filter_params || {}) %>
           </div>
         </div>
       </div>
