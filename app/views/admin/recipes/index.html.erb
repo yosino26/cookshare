@@ -1,0 +1,320 @@
+<% content_for :page_title, "レシピ管理" %>
+<% content_for :page_description, "全レシピの管理・統計表示" %>
+
+<!-- 統計サマリー -->
+<div class="row mb-4">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-body">
+        <div class="row text-center">
+          <div class="col-md-2">
+            <h4 class="text-primary mb-0"><%= @stats[:total] %></h4>
+            <small class="text-muted">総レシピ数</small>
+          </div>
+          <div class="col-md-2">
+            <h4 class="text-success mb-0"><%= @stats[:published] %></h4>
+            <small class="text-muted">公開中</small>
+          </div>
+          <div class="col-md-2">
+            <h4 class="text-warning mb-0"><%= @stats[:hidden] %></h4>
+            <small class="text-muted">非公開</small>
+          </div>
+          <div class="col-md-2">
+            <h4 class="text-info mb-0"><%= @stats[:today] %></h4>
+            <small class="text-muted">今日投稿</small>
+          </div>
+          <div class="col-md-2">
+            <h4 class="text-secondary mb-0"><%= @stats[:week] %></h4>
+            <small class="text-muted">今週投稿</small>
+          </div>
+          <div class="col-md-2">
+            <h4 class="text-danger mb-0"><%= @stats[:reported] %></h4>
+            <small class="text-muted">報告あり</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- フィルター・検索フォーム -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">
+      <i class="fas fa-filter me-2"></i>フィルター・検索
+    </h5>
+  </div>
+  <div class="card-body">
+    <%= form_with url: admin_recipes_path, method: :get, local: true, class: "row g-3" do |form| %>
+      <!-- 公開状態フィルター -->
+      <div class="col-md-2">
+        <%= form.label :status, "公開状態", class: "form-label" %>
+        <%= form.select :status, 
+            options_for_select([
+              ['全て', ''],
+              ['公開中', 'published'],
+              ['非公開', 'hidden']
+            ], @filter_params[:status]), 
+            {}, 
+            { class: "form-select" } %>
+      </div>
+
+      <!-- カテゴリフィルター -->
+      <div class="col-md-2">
+        <%= form.label :category_id, "カテゴリ", class: "form-label" %>
+        <%= form.select :category_id, 
+            options_from_collection_for_select(Category.all, :id, :name, @filter_params[:category_id]), 
+            { prompt: '全てのカテゴリ' },
+            { class: "form-select" } %>
+      </div>
+
+      <!-- 投稿期間フィルター -->
+      <div class="col-md-2">
+        <%= form.label :period, "投稿期間", class: "form-label" %>
+        <%= form.select :period, 
+            options_for_select([
+              ['全期間', ''],
+              ['今日', 'today'],
+              ['今週', 'week'],
+              ['今月', 'month'],
+              ['3ヶ月以内', '3months']
+            ], @filter_params[:period]), 
+            {}, 
+            { class: "form-select" } %>
+      </div>
+
+      <!-- ユーザーフィルター -->
+      <div class="col-md-2">
+        <%= form.label :user_id, "投稿者ID", class: "form-label" %>
+        <%= form.text_field :user_id, 
+            value: @filter_params[:user_id], 
+            placeholder: "ユーザーID", 
+            class: "form-control" %>
+      </div>
+
+      <!-- ソート順 -->
+      <div class="col-md-2">
+        <%= form.label :sort, "並び順", class: "form-label" %>
+        <%= form.select :sort, 
+            options_for_select([
+              ['新しい順', 'created_desc'],
+              ['古い順', 'created_asc'],
+              ['人気順', 'favorites_desc'],
+              ['コメント順', 'comments_desc']
+            ], @filter_params[:sort]), 
+            {}, 
+            { class: "form-select" } %>
+      </div>
+
+      <!-- 検索・リセットボタン -->
+      <div class="col-md-2 d-flex align-items-end">
+        <div class="btn-group w-100" role="group">
+          <%= form.submit "検索", class: "btn btn-primary" %>
+          <%= link_to "リセット", admin_recipes_path, class: "btn btn-outline-secondary" %>
+        </div>
+      </div>
+
+      <!-- キーワード検索 -->
+      <div class="col-md-10">
+        <%= form.label :search, "キーワード検索", class: "form-label" %>
+        <%= form.text_field :search, 
+            value: @filter_params[:search], 
+            placeholder: "レシピタイトル、説明文、材料名で検索...", 
+            class: "form-control" %>
+      </div>
+
+      <!-- 表示件数 -->
+      <div class="col-md-2">
+        <%= form.label :per_page, "表示件数", class: "form-label" %>
+        <%= form.select :per_page, 
+            options_for_select([
+              ['12件', '12'],
+              ['24件', '24'],
+              ['48件', '48']
+            ], @filter_params[:per_page] || '12'), 
+            {}, 
+            { class: "form-select" } %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- レシピ一覧 -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+      <i class="fas fa-book me-2"></i>レシピ一覧
+      <span class="badge bg-secondary ms-2"><%= @recipes.total_count %>件</span>
+    </h5>
+    <div>
+      <%= link_to admin_recipes_export_path(format: :csv, **@filter_params), 
+          class: "btn btn-outline-success btn-sm" do %>
+        <i class="fas fa-download me-1"></i>CSVエクスポート
+      <% end %>
+    </div>
+  </div>
+  
+  <div class="card-body">
+    <% if @recipes.any? %>
+      <div class="row">
+        <% @recipes.each do |recipe| %>
+          <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 <%= 'border-warning' if recipe.hidden? %>">
+              <!-- レシピ画像 -->
+              <div class="position-relative">
+                <% if recipe.image.attached? %>
+                  <%= image_tag recipe.image, 
+                      class: "card-img-top", 
+                      style: "height: 200px; object-fit: cover;" %>
+                <% else %>
+                  <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                       style="height: 200px;">
+                    <i class="fas fa-utensils text-muted fa-2x"></i>
+                  </div>
+                <% end %>
+                
+                <!-- ステータスバッジ -->
+                <div class="position-absolute top-0 start-0 m-2">
+                  <% if recipe.hidden? %>
+                    <span class="badge bg-warning">非公開</span>
+                  <% else %>
+                    <span class="badge bg-success">公開中</span>
+                  <% end %>
+                </div>
+                
+                <!-- 報告バッジ -->
+                <% if recipe.reports.pending.any? %>
+                  <div class="position-absolute top-0 end-0 m-2">
+                    <span class="badge bg-danger">
+                      <i class="fas fa-flag"></i>
+                      <%= recipe.reports.pending.count %>
+                    </span>
+                  </div>
+                <% end %>
+              </div>
+              
+              <!-- レシピ情報 -->
+              <div class="card-body">
+                <h6 class="card-title">
+                  <%= link_to recipe.title, admin_recipe_path(recipe), 
+                      class: "text-decoration-none" %>
+                </h6>
+                
+                <p class="card-text small text-muted">
+                  <%= truncate(recipe.description, length: 80) %>
+                </p>
+                
+                <!-- 投稿者情報 -->
+                <div class="d-flex align-items-center mb-2">
+                  <% if recipe.user.avatar.attached? %>
+                    <%= image_tag recipe.user.avatar, 
+                        class: "rounded-circle me-2", size: "24x24" %>
+                  <% else %>
+                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2" 
+                         style="width: 24px; height: 24px;">
+                      <i class="fas fa-user text-white small"></i>
+                    </div>
+                  <% end %>
+                  <small class="text-muted">
+                    <%= link_to recipe.user.display_name, admin_user_path(recipe.user), 
+                        class: "text-decoration-none" %>
+                  </small>
+                </div>
+                
+                <!-- 統計情報 -->
+                <div class="d-flex justify-content-between text-muted small mb-2">
+                  <span><i class="fas fa-clock"></i> <%= recipe.cooking_time %>分</span>
+                  <span><i class="fas fa-users"></i> <%= recipe.servings %>人分</span>
+                  <span><i class="fas fa-heart"></i> <%= recipe.favorites_count %></span>
+                  <span><i class="fas fa-comment"></i> <%= recipe.comments_count %></span>
+                </div>
+                
+                <!-- カテゴリタグ -->
+                <div class="mb-2">
+                  <% recipe.categories.limit(3).each do |category| %>
+                    <span class="badge bg-light text-dark me-1"><%= category.name %></span>
+                  <% end %>
+                  <% if recipe.categories.count > 3 %>
+                    <span class="badge bg-light text-dark">+<%= recipe.categories.count - 3 %></span>
+                  <% end %>
+                </div>
+                
+                <small class="text-muted">
+                  <%= recipe.created_at.strftime("%Y/%m/%d %H:%M") %>
+                </small>
+              </div>
+              
+              <!-- アクションボタン -->
+              <div class="card-footer bg-transparent">
+                <div class="btn-group w-100" role="group">
+                  <%= link_to admin_recipe_path(recipe), 
+                      class: "btn btn-sm btn-outline-primary" do %>
+                    <i class="fas fa-eye"></i>
+                  <% end %>
+                  
+                  <% if recipe.hidden? %>
+                    <%= link_to show_admin_recipe_path(recipe), 
+                        method: :patch,
+                        class: "btn btn-sm btn-outline-success",
+                        data: { 
+                          turbo_method: :patch,
+                          confirm: "このレシピを公開しますか？"
+                        } do %>
+                      <i class="fas fa-eye"></i>
+                    <% end %>
+                  <% else %>
+                    <%= link_to hide_admin_recipe_path(recipe), 
+                        method: :patch,
+                        class: "btn btn-sm btn-outline-warning",
+                        data: { 
+                          turbo_method: :patch,
+                          confirm: "このレシピを非公開にしますか？"
+                        } do %>
+                      <i class="fas fa-eye-slash"></i>
+                    <% end %>
+                  <% end %>
+                  
+                  <%= link_to admin_recipe_path(recipe), 
+                      method: :delete,
+                      class: "btn btn-sm btn-outline-danger",
+                      data: { 
+                        turbo_method: :delete,
+                        confirm: "このレシピを削除しますか？この操作は取り消せません。"
+                      } do %>
+                    <i class="fas fa-trash"></i>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- ページネーション -->
+      <div class="d-flex justify-content-between align-items-center mt-4">
+        <div class="text-muted">
+          <%= page_entries_info @recipes, entry_name: 'レシピ' %>
+        </div>
+        <div>
+          <%= paginate @recipes, theme: 'twitter-bootstrap-4' %>
+        </div>
+      </div>
+    <% else %>
+      <!-- 空状態 -->
+      <div class="text-center py-5">
+        <i class="fas fa-book text-muted fa-3x mb-3"></i>
+        <h5 class="text-muted">レシピが見つかりません</h5>
+        <p class="text-muted">
+          <% if @filter_params.any? { |k, v| v.present? } %>
+            検索条件を変更して再度お試しください。
+          <% else %>
+            まだレシピが投稿されていません。
+          <% end %>
+        </p>
+        <% if @filter_params.any? { |k, v| v.present? } %>
+          <%= link_to "フィルターをリセット", admin_recipes_path, class: "btn btn-outline-primary" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

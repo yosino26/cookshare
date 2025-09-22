@@ -22,4 +22,38 @@ Rails.application.routes.draw do
     end
     resource :follow, only: [:create, :destroy] 
   end
+
+  # ===== レポート機能（新規追加） =====
+  resources :reports, only: [:create]
+  get 'reports/recipes/:recipe_id/new',   to: 'reports#new', as: :new_recipe_report
+  get 'reports/comments/:comment_id/new', to: 'reports#new', as: :new_comment_report
+  get 'reports/users/:user_id/new',       to: 'reports#new', as: :new_user_report
+
+  # ===== 管理者機能（新規追加） =====
+  namespace :admin do
+    root 'dashboard#index'  # admin/ でダッシュボードにアクセス
+    
+    resources :reports, only: [:index, :show] do
+      member do
+        patch :resolve      # レポート解決
+        patch :dismiss      # レポート却下
+        patch :investigate  # 調査開始
+      end
+    end
+    
+    # CSV エクスポート（ヘルパーを admin_users_export_path にする）
+    get 'users/export', to: 'users#export', as: :users_export
+    resources :users, only: [:index, :show, :edit, :update] do
+      member do
+        patch :toggle_admin  # 管理者権限の付与・剥奪
+        patch :suspend
+        patch :unsuspend
+        patch :promote
+      end
+    end
+  
+    resources :recipes, only: [:index, :show, :edit, :update, :destroy]
+    
+    resources :comments, only: [:index, :destroy]
+  end 
 end

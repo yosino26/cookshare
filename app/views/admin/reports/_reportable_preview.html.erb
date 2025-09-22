@@ -1,0 +1,109 @@
+<% case report.reportable_type %>
+<% when 'Recipe' %>
+  <% recipe = report.reportable %>
+  <div class="d-flex align-items-start">
+    <div class="me-3">
+      <% if recipe.image.attached? %>
+        <%= image_tag recipe.image, class: "rounded", 
+            size: "80x80", style: "object-fit: cover;" %>
+      <% else %>
+        <div class="rounded bg-light d-flex align-items-center justify-content-center" 
+             style="width: 80px; height: 80px;">
+          <i class="fas fa-utensils text-muted fa-2x"></i>
+        </div>
+      <% end %>
+    </div>
+    <div class="flex-grow-1">
+      <h6 class="fw-bold mb-2"><%= recipe.title %></h6>
+      <p class="text-muted mb-2"><%= truncate(recipe.description, length: 150) %></p>
+      <div class="d-flex gap-3 text-sm text-muted">
+        <span><i class="fas fa-clock me-1"></i><%= recipe.cooking_time %>分</span>
+        <span><i class="fas fa-users me-1"></i><%= recipe.servings %>人分</span>
+        <span><i class="fas fa-heart me-1"></i><%= recipe.favorites_count %>件</span>
+        <span><i class="fas fa-comment me-1"></i><%= recipe.comments_count %>件</span>
+      </div>
+      <div class="mt-2">
+        <span class="badge bg-light text-dark">
+          投稿: <%= recipe.created_at.strftime("%Y/%m/%d") %>
+        </span>
+        <% recipe.categories.each do |category| %>
+          <span class="badge bg-info"><%= category.name %></span>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+<% when 'Comment' %>
+  <% comment = report.reportable %>
+  <div class="d-flex align-items-start">
+    <div class="me-3">
+      <% if comment.user.avatar.attached? %>
+        <%= image_tag comment.user.avatar, class: "rounded-circle", size: "50x50" %>
+      <% else %>
+        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" 
+             style="width: 50px; height: 50px;">
+          <i class="fas fa-user text-white"></i>
+        </div>
+      <% end %>
+    </div>
+    <div class="flex-grow-1">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <h6 class="mb-0"><%= comment.user.display_name %></h6>
+        <small class="text-muted"><%= time_ago_in_words(comment.created_at) %>前</small>
+      </div>
+      <div class="bg-light p-3 rounded mb-2">
+        <p class="mb-0" style="white-space: pre-line;"><%= comment.content %></p>
+      </div>
+      <small class="text-muted">
+        レシピ「<%= link_to comment.recipe.title, admin_recipe_path(comment.recipe), 
+              class: "text-decoration-none" %>」へのコメント
+      </small>
+    </div>
+  </div>
+
+<% when 'User' %>
+  <% user = report.reportable %>
+  <div class="d-flex align-items-start">
+    <div class="me-3">
+      <% if user.avatar.attached? %>
+        <%= image_tag user.avatar, class: "rounded-circle", size: "80x80" %>
+      <% else %>
+        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" 
+             style="width: 80px; height: 80px;">
+          <i class="fas fa-user text-white fa-2x"></i>
+        </div>
+      <% end %>
+    </div>
+    <div class="flex-grow-1">
+      <h6 class="fw-bold mb-2"><%= user.display_name %></h6>
+      <p class="text-muted mb-2"><%= user.email %></p>
+      <% if user.bio.present? %>
+        <p class="mb-2"><%= truncate(user.bio, length: 150) %></p>
+      <% end %>
+      <div class="d-flex gap-3 text-sm text-muted mb-2">
+        <span><i class="fas fa-book me-1"></i><%= user.recipes.count %>レシピ</span>
+        <span><i class="fas fa-heart me-1"></i><%= user.favorites.count %>お気に入り</span>
+        <span><i class="fas fa-users me-1"></i><%= user.followers.count %>フォロワー</span>
+        <span><i class="fas fa-comment me-1"></i><%= user.comments.count %>コメント</span>
+      </div>
+      <div>
+        <span class="badge bg-light text-dark">
+          登録: <%= user.created_at.strftime("%Y/%m/%d") %>
+        </span>
+        <% if user.admin? %>
+          <span class="badge bg-danger">管理者</span>
+        <% end %>
+        <% if user.suspended? %>
+          <span class="badge bg-warning">停止中</span>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+<% else %>
+  <div class="text-center text-muted py-3">
+    <i class="fas fa-question-circle fa-2x mb-2"></i>
+    <p class="mb-0">プレビューを表示できません</p>
+    <small>不明なコンテンツタイプ: <%= report.reportable_type %></small>
+  </div>
+<% end %>

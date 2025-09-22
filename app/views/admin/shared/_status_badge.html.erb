@@ -1,0 +1,77 @@
+<% 
+# 使用例: <%= render 'admin/shared/status_badge', status: 'active', type: 'user' %>
+# status: pending, investigating, resolved, dismissed, active, suspended, published, hidden
+# type: report, user, recipe, comment
+%>
+
+<%
+  case type
+  when 'report'
+    case status
+    when 'pending'
+      badge_class = 'bg-warning'
+      icon = 'fas fa-clock'
+      text = '未対応'
+    when 'investigating'
+      badge_class = 'bg-info'
+      icon = 'fas fa-search'
+      text = '調査中'
+    when 'resolved'
+      badge_class = 'bg-success'
+      icon = 'fas fa-check'
+      text = '解決済み'
+    when 'dismissed'
+      badge_class = 'bg-secondary'
+      icon = 'fas fa-times'
+      text = '却下'
+    end
+  when 'user'
+    case status
+    when 'active'
+      badge_class = 'bg-success'
+      icon = 'fas fa-user-check'
+      text = 'アクティブ'
+    when 'suspended'
+      badge_class = 'bg-warning'
+      icon = 'fas fa-user-slash'
+      text = '停止中'
+    when 'admin'
+      badge_class = 'bg-danger'
+      icon = 'fas fa-user-crown'
+      text = '管理者'
+    end
+  when 'recipe'
+    case status
+    when 'published'
+      badge_class = 'bg-success'
+      icon = 'fas fa-eye'
+      text = '公開中'
+    when 'hidden'
+      badge_class = 'bg-warning'
+      icon = 'fas fa-eye-slash'
+      text = '非公開'
+    end
+  when 'comment'
+    case status
+    when 'visible'
+      badge_class = 'bg-success'
+      icon = 'fas fa-eye'
+      text = '表示中'
+    when 'hidden'
+      badge_class = 'bg-warning'
+      icon = 'fas fa-eye-slash'
+      text = '非表示'
+    end
+  else
+    badge_class = 'bg-secondary'
+    icon = 'fas fa-question'
+    text = status.to_s.humanize
+  end
+%>
+
+<span class="badge <%= badge_class %>">
+  <% if defined?(icon) && icon %>
+    <i class="<%= icon %> me-1"></i>
+  <% end %>
+  <%= text %>
+</span>

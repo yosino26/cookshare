@@ -1,0 +1,85 @@
+/* CookShare 管理画面専用スタイル（管理画面のみ適用されるよう .admin-layout にスコープ） */
+/* ========================================
+   カスタムプロパティ（CSS変数）※ 管理画面内にのみ作用
+   ======================================== */
+   body.admin-layout {
+      --admin-primary: #1e3a8a;
+      --admin-secondary: #64748b;
+      --admin-success: #059669;
+      --admin-warning: #d97706;
+      --admin-danger: #dc2626;
+      --admin-bg: #f8fafc;
+    }
+    
+    /* ========================================
+       レイアウト
+       ======================================== */
+    .admin-layout {
+      background-color: var(--admin-bg);
+      min-height: 100vh;
+    }
+    
+    .admin-layout .admin-sidebar {
+      background: linear-gradient(135deg, var(--admin-primary) 0%, #3730a3 100%);
+      min-height: 100vh;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+    
+    .admin-layout .admin-main-content {
+      background-color: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .admin-layout .admin-page-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #ffffff;
+      border-radius: 12px 12px 0 0;
+    }
+    
+    /* ========================================
+       ナビゲーション
+       ======================================== */
+    .admin-layout .admin-nav-link {
+      color: rgba(255,255,255,0.8);
+      transition: all 0.3s ease;
+      border-radius: 8px;
+      margin: 4px 0;
+      text-decoration: none;
+      display: block;
+    }
+    
+    .admin-layout .admin-nav-link:hover,
+    .admin-layout .admin-nav-link.active {
+      background-color: rgba(255,255,255,0.1);
+      color: #ffffff;
+      transform: translateX(5px);
+    }
+    
+    .admin-layout .admin-nav-link i {
+      width: 20px;
+      text-align: center;
+    }
+    
+    /* ========================================
+       統計カード
+       ======================================== */
+    .admin-layout .stat-card {
+      transition: transform 0.2s ease;
+      border: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .admin-layout .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    /* ========================================
+       アラート
+       ======================================== */
+    .admin-layout .admin-alert {
+      border: none;
+      border-radius: 8px;
+    }
+    

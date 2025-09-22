@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CookShare - 管理者画面</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+    
+  </head>
+
+  <body class="admin-layout">
+    <div class="container-fluid">
+      <div class="row">
+        <!-- サイドバー -->
+        <nav class="col-md-3 col-lg-2 d-md-block admin-sidebar collapse">
+          <div class="position-sticky pt-3">
+            <!-- ロゴエリア -->
+            <div class="text-center mb-4">
+              <%= link_to root_path, class: "text-decoration-none" do %>
+                <h4 class="text-white fw-bold">
+                  <i class="fas fa-utensils me-2"></i>CookShare
+                </h4>
+                <small class="text-white-50">管理者画面</small>
+              <% end %>
+            </div>
+
+            <!-- ナビゲーションメニュー -->
+            <ul class="nav flex-column">
+              <!-- ダッシュボード -->
+              <li class="nav-item">
+                <%= link_to admin_root_path, 
+                    class: "nav-link admin-nav-link #{'active' if current_page?(admin_root_path)}" do %>
+                  <i class="fas fa-tachometer-alt me-2"></i>
+                  ダッシュボード
+                <% end %>
+              </li>
+
+              <!-- レポート管理 -->
+              <li class="nav-item">
+                <%= link_to admin_reports_path, 
+                    class: "nav-link admin-nav-link #{'active' if controller_name == 'reports'}" do %>
+                  <i class="fas fa-flag me-2"></i>
+                  レポート管理
+                  <% if (pending_count = Report.pending.count) > 0 %>
+                    <span class="badge bg-danger ms-2"><%= pending_count %></span>
+                  <% end %>
+                <% end %>
+              </li>
+
+              <!-- ユーザー管理 -->
+              <li class="nav-item">
+                <%= link_to admin_users_path, 
+                    class: "nav-link admin-nav-link #{'active' if controller_name == 'users' && request.path.start_with?('/admin')}" do %>
+                  <i class="fas fa-users me-2"></i>
+                  ユーザー管理
+                <% end %>
+              </li>
+
+              <!-- レシピ管理 -->
+              <li class="nav-item">
+                <%= link_to admin_recipes_path, 
+                    class: "nav-link admin-nav-link #{'active' if controller_name == 'recipes' && request.path.start_with?('/admin')}" do %>
+                  <i class="fas fa-book me-2"></i>
+                  レシピ管理
+                <% end %>
+              </li>
+
+              <!-- コメント管理 -->
+              <li class="nav-item">
+                <%= link_to admin_comments_path, 
+                    class: "nav-link admin-nav-link #{'active' if controller_name == 'comments' && request.path.start_with?('/admin')}" do %>
+                  <i class="fas fa-comments me-2"></i>
+                  コメント管理
+                <% end %>
+              </li>
+
+              <hr class="text-white-50 my-3">
+
+              <!-- 一般サイトへ戻る -->
+              <li class="nav-item">
+                <%= link_to root_path, class: "nav-link admin-nav-link" do %>
+                  <i class="fas fa-external-link-alt me-2"></i>
+                  サイトに戻る
+                <% end %>
+              </li>
+
+              <!-- ログアウト -->
+              <li class="nav-item">
+                <%= link_to destroy_user_session_path, 
+                    method: :delete, 
+                    class: "nav-link admin-nav-link",
+                    data: { turbo_method: :delete } do %>
+                  <i class="fas fa-sign-out-alt me-2"></i>
+                  ログアウト
+                <% end %>
+              </li>
+            </ul>
+
+            <!-- 管理者情報 -->
+            <div class="mt-auto pt-3 border-top border-white-50">
+              <div class="text-center text-white-50">
+                <small>管理者: <%= current_user.display_name %></small>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <!-- メインコンテンツ -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+          <!-- ページヘッダー -->
+          <div class="admin-page-header p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h1 class="h3 mb-0"><%= yield :page_title %></h1>
+                <% if content_for?(:page_description) %>
+                  <p class="mb-0 opacity-75"><%= yield :page_description %></p>
+                <% end %>
+              </div>
+              <div>
+                <%= yield :page_actions %>
+              </div>
+            </div>
+          </div>
+
+          <!-- ブレッドクラム -->
+          <% if @breadcrumbs.present? %>
+            <nav aria-label="breadcrumb" class="mb-3">
+              <ol class="breadcrumb">
+                <% @breadcrumbs.each_with_index do |crumb, index| %>
+                  <% if index == @breadcrumbs.length - 1 %>
+                    <li class="breadcrumb-item active" aria-current="page">
+                      <%= crumb[:name] %>
+                    </li>
+                  <% else %>
+                    <li class="breadcrumb-item">
+                      <%= link_to crumb[:name], crumb[:path] %>
+                    </li>
+                  <% end %>
+                <% end %>
+              </ol>
+            </nav>
+          <% end %>
+
+          <!-- フラッシュメッセージ -->
+          <% flash.each do |type, message| %>
+            <div class="alert admin-alert alert-<%= type == 'notice' ? 'success' : type == 'alert' ? 'danger' : type %> alert-dismissible fade show" role="alert">
+              <%= message %>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          <% end %>
+
+          <!-- メインコンテンツエリア -->
+          <div class="admin-main-content p-4">
+            <%= yield %>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- FontAwesome読み込み -->
+    <script src="https://kit.fontawesome.com/your-fontawesome-code.js" crossorigin="anonymous"></script>
+  </body>
+</html>
