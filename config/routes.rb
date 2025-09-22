@@ -52,7 +52,8 @@ Rails.application.routes.draw do
       end
     end
   
-    resources :recipes, only: [:index, :show, :edit, :update, :destroy]
+    get 'recipes/export', to: 'recipes#export', as: :recipes_export
+    resources :recipes, only: [:index, :show, :edit, :update, :destroy]    
     
     resources :comments, only: [:index, :destroy]
   end 
