@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_09_21_195929) do
+ActiveRecord::Schema[7.1].define(version: 2025_09_22_193248) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -123,7 +123,9 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_21_195929) do
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "hidden", default: false, null: false
     t.index ["created_at"], name: "index_recipes_on_created_at"
+    t.index ["hidden"], name: "index_recipes_on_hidden"
     t.index ["title"], name: "index_recipes_on_title"
     t.index ["user_id"], name: "index_recipes_on_user_id"
   end
