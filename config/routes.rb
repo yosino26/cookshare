@@ -41,7 +41,7 @@ Rails.application.routes.draw do
       end
     end
     
-    # CSV エクスポート（ヘルパーを admin_users_export_path にする）
+    # Users
     get 'users/export', to: 'users#export', as: :users_export
     resources :users, only: [:index, :show, :edit, :update] do
       member do
@@ -52,8 +52,14 @@ Rails.application.routes.draw do
       end
     end
   
+    # Recipes
     get 'recipes/export', to: 'recipes#export', as: :recipes_export
-    resources :recipes, only: [:index, :show, :edit, :update, :destroy]    
+    resources :recipes, only: [:index, :show, :edit, :update, :destroy] do
+      member do
+        patch :hide
+        patch :unhide
+      end
+    end         
     
     resources :comments, only: [:index, :destroy]
   end 

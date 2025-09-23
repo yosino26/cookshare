@@ -12,15 +12,16 @@
             <small class="text-muted">総レシピ数</small>
           </div>
           <div class="col-md-2">
-            <h4 class="text-success mb-0"><%= @stats[:published] %></h4>
+            <h4 class="text-success mb-0"><%= (@stats[:published] || (@stats[:total].to_i - @stats[:hidden].to_i)) %></h4>
             <small class="text-muted">公開中</small>
           </div>
           <div class="col-md-2">
-            <h4 class="text-warning mb-0"><%= @stats[:hidden] %></h4>
+            <h4 class="text-warning mb-0"><%= (@stats[:hidden] || 0) %></h4>
             <small class="text-muted">非公開</small>
           </div>
           <div class="col-md-2">
             <h4 class="text-info mb-0"><%= @stats[:today] %></h4>
+            
             <small class="text-muted">今日投稿</small>
           </div>
           <div class="col-md-2">
@@ -28,7 +29,7 @@
             <small class="text-muted">今週投稿</small>
           </div>
           <div class="col-md-2">
-            <h4 class="text-danger mb-0"><%= @stats[:reported] %></h4>
+            <h4 class="text-danger mb-0"><%= (@stats[:reported] || 0) %></h4>
             <small class="text-muted">報告あり</small>
           </div>
         </div>
@@ -95,15 +96,15 @@
       <!-- ソート順 -->
       <div class="col-md-2">
         <%= form.label :sort, "並び順", class: "form-label" %>
-        <%= form.select :sort, 
-            options_for_select([
-              ['新しい順', 'created_desc'],
-              ['古い順', 'created_asc'],
-              ['人気順', 'favorites_desc'],
-              ['コメント順', 'comments_desc']
-            ], @filter_params[:sort]), 
-            {}, 
-            { class: "form-select" } %>
+        <%= form.select :sort,
+        options_for_select([
+          ['新しい順', 'created_desc'],
+          ['古い順',   'created_asc'],
+          ['調理時間', 'cooking_time'],
+          ['人気順',   'popular']
+        ], @filter_params[:sort]),
+        {},
+        { class: "form-select" } %>
       </div>
 
       <!-- 検索・リセットボタン -->
@@ -206,9 +207,8 @@
                 
                 <!-- 投稿者情報 -->
                 <div class="d-flex align-items-center mb-2">
-                  <% if recipe.user.avatar.attached? %>
-                    <%= image_tag recipe.user.avatar, 
-                        class: "rounded-circle me-2", size: "24x24" %>
+                  <% if recipe.user&.avatar&.attached? %>
+                    <%= image_tag recipe.user.avatar, class: "rounded-circle me-2", size: "24x24" %>
                   <% else %>
                     <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2" 
                          style="width: 24px; height: 24px;">
@@ -225,8 +225,8 @@
                 <div class="d-flex justify-content-between text-muted small mb-2">
                   <span><i class="fas fa-clock"></i> <%= recipe.cooking_time %>分</span>
                   <span><i class="fas fa-users"></i> <%= recipe.servings %>人分</span>
-                  <span><i class="fas fa-heart"></i> <%= recipe.favorites_count %></span>
-                  <span><i class="fas fa-comment"></i> <%= recipe.comments_count %></span>
+                  <span><i class="fas fa-heart"></i> <%= recipe.favorites.size %></span>
+                  <span><i class="fas fa-comment"></i> <%= recipe.comments.size %></span>
                 </div>
                 
                 <!-- カテゴリタグ -->
@@ -247,40 +247,28 @@
               <!-- アクションボタン -->
               <div class="card-footer bg-transparent">
                 <div class="btn-group w-100" role="group">
-                  <%= link_to admin_recipe_path(recipe), 
-                      class: "btn btn-sm btn-outline-primary" do %>
+                  <%= link_to admin_recipe_path(recipe), class: "btn btn-sm btn-outline-primary" do %>
                     <i class="fas fa-eye"></i>
                   <% end %>
-                  
                   <% if recipe.hidden? %>
-                    <%= link_to show_admin_recipe_path(recipe), 
+                    <%= link_to unhide_admin_recipe_path(recipe),
                         method: :patch,
-                        class: "btn btn-sm btn-outline-success",
-                        data: { 
-                          turbo_method: :patch,
-                          confirm: "このレシピを公開しますか？"
-                        } do %>
+                        data: { turbo_method: :patch, confirm: "このレシピを公開しますか？" },
+                        class: "btn btn-sm btn-outline-success" do %>
                       <i class="fas fa-eye"></i>
                     <% end %>
                   <% else %>
-                    <%= link_to hide_admin_recipe_path(recipe), 
+                    <%= link_to hide_admin_recipe_path(recipe),
                         method: :patch,
-                        class: "btn btn-sm btn-outline-warning",
-                        data: { 
-                          turbo_method: :patch,
-                          confirm: "このレシピを非公開にしますか？"
-                        } do %>
+                        data: { turbo_method: :patch, confirm: "このレシピを非公開にしますか？" },
+                        class: "btn btn-sm btn-outline-warning" do %>
                       <i class="fas fa-eye-slash"></i>
                     <% end %>
                   <% end %>
-                  
-                  <%= link_to admin_recipe_path(recipe), 
+                  <%= link_to admin_recipe_path(recipe),
                       method: :delete,
-                      class: "btn btn-sm btn-outline-danger",
-                      data: { 
-                        turbo_method: :delete,
-                        confirm: "このレシピを削除しますか？この操作は取り消せません。"
-                      } do %>
+                      data: { turbo_method: :delete, confirm: "このレシピを削除しますか？この操作は取り消せません。" },
+                      class: "btn btn-sm btn-outline-danger" do %>
                     <i class="fas fa-trash"></i>
                   <% end %>
                 </div>
@@ -290,15 +278,15 @@
         <% end %>
       </div>
 
-      <!-- ページネーション -->
-      <div class="d-flex justify-content-between align-items-center mt-4">
-        <div class="text-muted">
-          <%= page_entries_info @recipes, entry_name: 'レシピ' %>
-        </div>
-        <div>
-          <%= paginate @recipes, theme: 'twitter-bootstrap-4' %>
-        </div>
-      </div>
+<!-- ページネーション -->
+<div class="d-flex justify-content-between align-items-center mt-4">
+  <div class="text-muted">
+    <%= page_entries_info @recipes, entry_name: 'レシピ' %>
+  </div>
+  <div>
+    <%= paginate @recipes, theme: 'bootstrap4', params: (@filter_params || {}) %>
+  </div>
+</div>
     <% else %>
       <!-- 空状態 -->
       <div class="text-center py-5">
