@@ -1,4 +1,3 @@
-# 
 class Admin::BaseController < ApplicationController
   # 全ての管理者コントローラーで管理者認証を必須にする
   before_action :authenticate_admin!

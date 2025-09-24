@@ -59,8 +59,17 @@ Rails.application.routes.draw do
         patch :hide
         patch :unhide
       end
-    end         
-    
-    resources :comments, only: [:index, :destroy]
+    end   
+
+    # comments
+    resources :comments, only: [:index, :show, :destroy] do
+        collection { patch :bulk }     # => bulk_admin_comments_path
+        member do
+          patch :hide                  # => hide_admin_comment_path(:id)
+          patch :unhide                # unhide_admin_comment_path(:id) ←コメント修正
+        end
+      end
+    end
+
   end 
 end

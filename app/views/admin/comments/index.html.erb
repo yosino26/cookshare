@@ -49,14 +49,11 @@
       <!-- 表示状態フィルター -->
       <div class="col-md-2">
         <%= form.label :status, "表示状態", class: "form-label" %>
-        <%= form.select :status, 
-            options_for_select([
-              ['全て', ''],
-              ['表示中', 'visible'],
-              ['非表示', 'hidden']
-            ], @filter_params[:status]), 
-            {}, 
-            { class: "form-select" } %>
+        <%= form.select :status,
+              options_for_select([['全て',''], ['表示中','visible'], ['非表示','hidden']],
+                                 @filter_params&.fetch(:status, '')),
+              {},
+              { class: "form-select" } %>
       </div>
 
       <!-- レシピフィルター -->

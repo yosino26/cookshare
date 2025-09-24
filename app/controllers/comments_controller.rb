@@ -22,7 +22,6 @@ class CommentsController < ApplicationController
     end
   end
 
-  
   private
   def set_recipe
     @recipe = Recipe.find(params[:recipe_id])
