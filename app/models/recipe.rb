@@ -42,6 +42,8 @@ class Recipe < ApplicationRecord
   # スコープ
   scope :recent, -> { order(created_at: :desc) }
   scope :by_cooking_time, ->(time) { where('cooking_time <= ?', time.to_i) }
+  scope :visible, -> { where(hidden: false) }
+  scope :hidden,  -> { where(hidden: true)  }
 
   # 検索用スコープ
   scope :search_by_title_and_description, ->(keyword) {

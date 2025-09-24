@@ -45,6 +45,7 @@ class RecipesController < ApplicationController
     @user   = @recipe.user   # ←@user が nil（→ avatar で落ちる）を防ぐ
   end
 
+
   def new
     @recipe = current_user.recipes.build
     @recipe.ingredients.build(order_number: 1)  if @recipe.ingredients.empty?

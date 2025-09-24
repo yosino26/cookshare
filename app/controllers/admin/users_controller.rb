@@ -8,9 +8,40 @@ class Admin::UsersController < Admin::BaseController
     @stats = Admin::UserStats.call
   end
 
+  # ユーザーCSVエクスポート
   def export
     scope = Admin::UsersQuery.new(filter_params).call
-    send_data Admin::UserCsvExporter.call(scope),
+
+    # 集計系を使うなら事前ロードでN+1回避
+    preload_assocs = []
+    preload_assocs << :recipes  if User.reflect_on_association(:recipes)
+    preload_assocs << :comments if User.reflect_on_association(:comments)
+    scope = scope.includes(preload_assocs) if preload_assocs.any?
+
+    require 'csv'
+    csv = CSV.generate(headers: true) do |c|
+      headers = %w[id name email admin created_at]
+      headers << 'recipes_count'  if User.reflect_on_association(:recipes)
+      headers << 'comments_count' if User.reflect_on_association(:comments)
+      headers << 'last_sign_in_at' if User.column_names.include?('last_sign_in_at')
+      c << headers
+
+      scope.find_each do |u|
+        row = [
+          u.id,
+          (u.respond_to?(:display_name) ? u.display_name : u.name),
+          u.email,
+          u.admin?,
+          u.created_at
+        ]
+        row << (u.respond_to?(:recipes)  ? u.recipes.size  : nil) if headers.include?('recipes_count')
+        row << (u.respond_to?(:comments) ? u.comments.size : nil) if headers.include?('comments_count')
+        row << u[:last_sign_in_at] if headers.include?('last_sign_in_at')
+        c << row
+      end
+    end
+
+    send_data csv,
               filename: "users_#{Time.zone.now.strftime('%Y%m%d_%H%M%S')}.csv",
               type: 'text/csv'
   end
@@ -33,13 +64,17 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def suspend
-    ensure_suspended_column!
+    unless User.column_names.include?('suspended')
+      redirect_back fallback_location: admin_users_path, alert: 'suspended カラムがありません' and return
+    end
     @user.update!(suspended: true)
     redirect_back fallback_location: admin_users_path, notice: '停止しました'
   end
 
   def unsuspend
-    ensure_suspended_column!
+    unless User.column_names.include?('suspended')
+      redirect_back fallback_location: admin_users_path, alert: 'suspended カラムがありません' and return
+    end
     @user.update!(suspended: false)
     redirect_back fallback_location: admin_users_path, notice: '停止を解除しました'
   end
@@ -50,7 +85,10 @@ class Admin::UsersController < Admin::BaseController
   end
 
   private
-  def set_user; @user = User.find(params[:id]); end
+
+  def set_user
+    @user = User.find(params[:id])
+  end
 
   def user_params
     params.require(:user).permit(:name, :email, :admin)
@@ -66,11 +104,4 @@ class Admin::UsersController < Admin::BaseController
     n = filter_params['per_page'].to_i
     [20, 50, 100].include?(n) ? n : 20
   end
-
-  def ensure_suspended_column!
-    unless User.column_names.include?('suspended')
-      redirect_back fallback_location: admin_users_path, alert: 'suspended カラムがありません' and return
-    end
-  end
 end
-
