@@ -1,3 +1,4 @@
+# config/routes.rb
 Rails.application.routes.draw do
   devise_for :users
 
@@ -7,69 +8,61 @@ Rails.application.routes.draw do
   # レシピ
   resources :recipes do
     collection do
-      get :search   # /recipes/search
-      get :feed  # タイムライン追加
+      get :search
+      get :feed
     end
-    resource :favorite, only: [:create, :destroy]  # /recipes/:recipe_id/favorite
-    resources :comments, only: [:create, :destroy]  # 追加
-    resources :ratings, only: [:create]  # 追加
+    resource  :favorite, only: [:create, :destroy]
+    resources :comments, only: [:create, :destroy]
+    resources :ratings,  only: [:create]
   end
 
-  # ユーザー（プロフィール表示・編集・更新・お気に入り一覧）
+  # ユーザー
   resources :users, only: [:show, :edit, :update] do
-    member do
-      get :favorites  # /users/:id/favorites
-    end
-    resource :follow, only: [:create, :destroy] 
+    member { get :favorites }
+    resource :follow, only: [:create, :destroy]
   end
 
-  # ===== レポート機能（新規追加） =====
+  # レポート（公開側）
   resources :reports, only: [:create]
   get 'reports/recipes/:recipe_id/new',   to: 'reports#new', as: :new_recipe_report
   get 'reports/comments/:comment_id/new', to: 'reports#new', as: :new_comment_report
   get 'reports/users/:user_id/new',       to: 'reports#new', as: :new_user_report
 
-  # ===== 管理者機能（新規追加） =====
+  # 管理者
   namespace :admin do
-    root 'dashboard#index'  # admin/ でダッシュボードにアクセス
-    
+    root 'dashboard#index'
+
     resources :reports, only: [:index, :show] do
       member do
-        patch :resolve      # レポート解決
-        patch :dismiss      # レポート却下
-        patch :investigate  # 調査開始
+        patch :resolve
+        patch :dismiss
+        patch :investigate
       end
     end
-    
-    # Users
+
     get 'users/export', to: 'users#export', as: :users_export
     resources :users, only: [:index, :show, :edit, :update] do
       member do
-        patch :toggle_admin  # 管理者権限の付与・剥奪
+        patch :toggle_admin
         patch :suspend
         patch :unsuspend
         patch :promote
       end
     end
-  
-    # Recipes
+
     get 'recipes/export', to: 'recipes#export', as: :recipes_export
     resources :recipes, only: [:index, :show, :edit, :update, :destroy] do
       member do
         patch :hide
         patch :unhide
       end
-    end   
-
-    # comments
+    end
     resources :comments, only: [:index, :show, :destroy] do
-        collection { patch :bulk }     # => bulk_admin_comments_path
-        member do
-          patch :hide                  # => hide_admin_comment_path(:id)
-          patch :unhide                # unhide_admin_comment_path(:id) ←コメント修正
-        end
+      collection { patch :bulk }   # => bulk_admin_comments_path
+      member do
+        patch :hide               # => hide_admin_comment_path(:id)
+        patch :unhide             # => unhide_admin_comment_path(:id)
       end
     end
-
-  end 
+  end
 end

@@ -153,8 +153,8 @@
     <% if @comments.any? %>
       <!-- 一括操作フォーム -->
       <div id="bulkActionForm" class="bg-light p-3 border-bottom" style="display: none;">
-        <%= form_with url: admin_bulk_comments_path, method: :patch, 
-            class: "d-flex align-items-center gap-3", id: "bulk-form" do |form| %>
+       <%= form_with url: bulk_admin_comments_path, method: :patch,
+            class: "d-flex align-items-center gap-3", id: "bulk-form", local: true do |form| %>
           <%= form.select :bulk_action, 
               options_for_select([
                 ['アクションを選択', ''],
@@ -321,7 +321,9 @@
             <%= page_entries_info @comments, entry_name: 'コメント' %>
           </div>
           <div>
-            <%= paginate @comments, theme: 'twitter-bootstrap-4' %>
+            
+
+            <%= paginate @comments, theme: 'bootstrap4' %>
           </div>
         </div>
       </div>
