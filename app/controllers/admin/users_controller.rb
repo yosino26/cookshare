@@ -46,7 +46,47 @@ class Admin::UsersController < Admin::BaseController
               type: 'text/csv'
   end
 
-  def show; end
+  def show
+    # 統計・一覧（既存）
+    @user_stats = {
+      recipes_count:    @user.recipes.count,
+      comments_count:   @user.comments.count,
+      favorites_count:  @user.favorites.count,
+      ratings_count:    @user.ratings.count,
+      followers_count:  @user.followers.count,
+      followings_count: @user.followings.count
+    }
+  
+    @recipes  = @user.recipes.order(created_at: :desc)
+                     .page(params[:recipes_page]).per(20)
+    @comments = @user.comments.order(created_at: :desc)
+                     .page(params[:comments_page]).per(20)
+  
+    # ★ ここから追加：関連レポート
+    if ActiveRecord::Base.connection.data_source_exists?(:reports)
+      reports_scope = Report.none
+      reports_scope = reports_scope.or(Report.where(reportable: @user))
+      reports_scope = reports_scope.or(
+        Report.where(reportable_type: 'Recipe',
+                     reportable_id: @user.recipes.select(:id))
+      )
+      reports_scope = reports_scope.or(
+        Report.where(reportable_type: 'Comment',
+                     reportable_id: @user.comments.select(:id))
+      )
+  
+      @related_reports  = reports_scope
+                            .includes(:user, :reportable)   # reporter と対象を先読み
+                            .order(created_at: :desc)
+  
+      @submitted_reports = Report.where(user_id: @user.id)
+                                 .includes(:reportable)
+                                 .order(created_at: :desc)
+    else
+      @related_reports   = []
+      @submitted_reports = []
+  end
+
   def edit; end
 
   def update
@@ -96,12 +136,14 @@ class Admin::UsersController < Admin::BaseController
 
   def filter_params
     params.permit(:status, :role, :period, :activity, :sort, :search, :per_page)
-          .to_h.transform_values { |v| v.to_s }
-          .reverse_merge('sort' => 'created_desc', 'per_page' => '20')
+          .to_h
+          .symbolize_keys
+          .reverse_merge(sort: 'created_desc', per_page: '20')
   end
-
+  
   def per_page
-    n = filter_params['per_page'].to_i
+    n = filter_params[:per_page].to_i
     [20, 50, 100].include?(n) ? n : 20
   end
+end
 end
