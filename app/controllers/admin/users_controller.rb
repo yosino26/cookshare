@@ -12,7 +12,6 @@ class Admin::UsersController < Admin::BaseController
   def export
     scope = Admin::UsersQuery.new(filter_params).call
 
-    # 集計系を使うなら事前ロードでN+1回避
     preload_assocs = []
     preload_assocs << :recipes  if User.reflect_on_association(:recipes)
     preload_assocs << :comments if User.reflect_on_association(:comments)
@@ -21,8 +20,8 @@ class Admin::UsersController < Admin::BaseController
     require 'csv'
     csv = CSV.generate(headers: true) do |c|
       headers = %w[id name email admin created_at]
-      headers << 'recipes_count'  if User.reflect_on_association(:recipes)
-      headers << 'comments_count' if User.reflect_on_association(:comments)
+      headers << 'recipes_count'   if User.reflect_on_association(:recipes)
+      headers << 'comments_count'  if User.reflect_on_association(:comments)
       headers << 'last_sign_in_at' if User.column_names.include?('last_sign_in_at')
       c << headers
 
@@ -47,7 +46,6 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def show
-    # 統計・一覧（既存）
     @user_stats = {
       recipes_count:    @user.recipes.count,
       comments_count:   @user.comments.count,
@@ -56,13 +54,13 @@ class Admin::UsersController < Admin::BaseController
       followers_count:  @user.followers.count,
       followings_count: @user.followings.count
     }
-  
+
     @recipes  = @user.recipes.order(created_at: :desc)
                      .page(params[:recipes_page]).per(20)
     @comments = @user.comments.order(created_at: :desc)
                      .page(params[:comments_page]).per(20)
-  
-    # ★ ここから追加：関連レポート
+
+    # 関連レポート
     if ActiveRecord::Base.connection.data_source_exists?(:reports)
       reports_scope = Report.none
       reports_scope = reports_scope.or(Report.where(reportable: @user))
@@ -74,17 +72,18 @@ class Admin::UsersController < Admin::BaseController
         Report.where(reportable_type: 'Comment',
                      reportable_id: @user.comments.select(:id))
       )
-  
-      @related_reports  = reports_scope
-                            .includes(:user, :reportable)   # reporter と対象を先読み
-                            .order(created_at: :desc)
-  
+
+      @related_reports = reports_scope
+                           .includes(:user, :reportable)
+                           .order(created_at: :desc)
+
       @submitted_reports = Report.where(user_id: @user.id)
-                                 .includes(:reportable)
-                                 .order(created_at: :desc)
+                                .includes(:reportable)
+                                .order(created_at: :desc)
     else
       @related_reports   = []
       @submitted_reports = []
+    end
   end
 
   def edit; end
@@ -140,10 +139,9 @@ class Admin::UsersController < Admin::BaseController
           .symbolize_keys
           .reverse_merge(sort: 'created_desc', per_page: '20')
   end
-  
+
   def per_page
     n = filter_params[:per_page].to_i
     [20, 50, 100].include?(n) ? n : 20
   end
-end
 end
