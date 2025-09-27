@@ -4,7 +4,7 @@
       <div class="card-body p-5">
         <h2 class="text-center mb-4">🍳 ログイン</h2>
 
-        <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+        <%= form_for(resource, as: resource_name, url: session_path(resource_name), data: { turbo: false }) do |f| %>
           <div class="mb-3">
             <%= f.label :email, "メールアドレス", class: "form-label" %>
             <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control" %>

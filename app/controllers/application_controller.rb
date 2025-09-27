@@ -1,12 +1,14 @@
 class ApplicationController < ActionController::Base
-  before_action :reject_suspended_user
-
     # CSRF保護
     protect_from_forgery with: :exception
   
     # Devise用の設定
     before_action :authenticate_user!
     before_action :configure_permitted_parameters, if: :devise_controller?
+
+    # Deviseの画面（ログイン/新規登録/パスワード系）は認証スキップ
+    skip_before_action :authenticate_user!, if: :devise_controller?
+    before_action :reject_suspended_user
   
     protected
     # Deviseのパラメータ設定（既存）
