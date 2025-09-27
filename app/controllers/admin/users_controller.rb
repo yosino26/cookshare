@@ -103,18 +103,19 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def suspend
-    unless User.column_names.include?('suspended')
-      redirect_back fallback_location: admin_users_path, alert: 'suspended カラムがありません' and return
-    end
-    @user.update!(suspended: true)
+    dur = params[:suspend_duration].to_i # '1','3','7','30','0'
+    until_time = dur.zero? ? nil : Time.current + dur.days
+  
+    @user.update!(
+      suspended: dur.zero? ? true : false,   # 無期限→true / 期間→falseでもuntilで止まる
+      suspended_until: until_time,
+      suspend_reason: params[:suspend_reason]
+    )
     redirect_back fallback_location: admin_users_path, notice: '停止しました'
   end
-
+  
   def unsuspend
-    unless User.column_names.include?('suspended')
-      redirect_back fallback_location: admin_users_path, alert: 'suspended カラムがありません' and return
-    end
-    @user.update!(suspended: false)
+    @user.update!(suspended: false, suspended_until: nil, suspend_reason: nil)
     redirect_back fallback_location: admin_users_path, notice: '停止を解除しました'
   end
 

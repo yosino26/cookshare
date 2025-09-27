@@ -1,4 +1,6 @@
 class ApplicationController < ActionController::Base
+  before_action :reject_suspended_user
+
     # CSRF保護
     protect_from_forgery with: :exception
   
@@ -53,6 +55,15 @@ class ApplicationController < ActionController::Base
      respond_to do |format|
        format.html { block.call if block_given? }
        format.js   { block.call if block_given? }
+     end
+   end
+
+   # アカウント停止か判断
+   def reject_suspended_user
+     return unless user_signed_in?
+     if current_user.suspended?
+       sign_out current_user
+       redirect_to new_user_session_path, alert: 'アカウントは停止中です。'
      end
    end
 
