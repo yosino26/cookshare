@@ -5,6 +5,10 @@ class ApplicationController < ActionController::Base
     # Devise用の設定
     before_action :authenticate_user!
     before_action :configure_permitted_parameters, if: :devise_controller?
+
+    # Deviseの画面（ログイン/新規登録/パスワード系）は認証スキップ
+    skip_before_action :authenticate_user!, if: :devise_controller?
+    before_action :reject_suspended_user
   
     protected
     # Deviseのパラメータ設定（既存）
@@ -53,6 +57,15 @@ class ApplicationController < ActionController::Base
      respond_to do |format|
        format.html { block.call if block_given? }
        format.js   { block.call if block_given? }
+     end
+   end
+
+   # アカウント停止か判断
+   def reject_suspended_user
+     return unless user_signed_in?
+     if current_user.suspended?
+       sign_out current_user
+       redirect_to new_user_session_path, alert: 'アカウントは停止中です。'
      end
    end
 

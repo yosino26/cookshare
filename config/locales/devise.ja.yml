@@ -1,0 +1,5 @@
+ja:
+  devise:
+    failure:
+      locked: "アカウントは停止中です。"
+      inactive: "アカウントが有効ではありません。"

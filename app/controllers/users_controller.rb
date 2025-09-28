@@ -41,4 +41,23 @@ class UsersController < ApplicationController
   def correct_user
     redirect_to root_path unless current_user == @user
   end
+
+ 
+
+  def suspend
+    dur = params[:suspend_duration].to_i # '1','3','7','30','0'
+    until_time = dur.zero? ? nil : Time.current + dur.days
+  
+    @user.update!(
+      suspended: dur.zero? ? true : false,
+      suspended_until: until_time,
+      suspend_reason: params[:suspend_reason]
+    )
+    redirect_back fallback_location: admin_users_path, notice: '停止しました'
+  end
+  
+  def unsuspend
+    @user.update!(suspended: false, suspended_until: nil, suspend_reason: nil)
+    redirect_back fallback_location: admin_users_path, notice: '停止を解除しました'
+  end
 end

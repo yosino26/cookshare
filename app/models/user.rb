@@ -104,4 +104,16 @@ class User < ApplicationRecord
     admin_handled_reports.count
   end
 
+  # アカウント停止の処理
+  def active_for_authentication?
+    super && !suspended?
+  end
+  def suspended?
+    # 無期限（suspended:true） or 期限付き（suspended_until）どちらでもロック扱い
+    (self[:suspended] == true) || (suspended_until.present? && Time.current < suspended_until)
+  end
+  def inactive_message
+    suspended? ? :locked : super
+  end
+
 end

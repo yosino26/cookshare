@@ -82,4 +82,28 @@
       border: none;
       border-radius: 8px;
     }
+
+    /* アクション群を折り返し＆余白確保 */
+    .admin-card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;            /* ボタン間のすき間 */
+    }
     
+    /* ボタンを均等に広げて押しやすく */
+    .admin-card-actions .btn {
+      flex: 1 1 0;           /* 幅を均等配分 */
+      white-space: nowrap;   /* テキストの折返し防止 */
+    }
+    
+    /* どうしても小さくしたい時の控えめなサイズ調整（任意） */
+    .admin-card-actions .btn.btn-sm {
+      padding: .3rem .5rem;
+      font-size: .875rem;
+    }
+    
+    /* カード内余白が詰まってる場合の保険 */
+    .card-footer.bg-transparent {
+      padding-top: .75rem;
+      padding-bottom: .75rem;
+    }
