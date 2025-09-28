@@ -44,6 +44,7 @@ class Recipe < ApplicationRecord
   scope :by_cooking_time, ->(time) { where('cooking_time <= ?', time.to_i) }
   scope :visible, -> { where(hidden: false) }
   scope :hidden,  -> { where(hidden: true)  }
+  scope :published, -> { where(hidden: false) }  # 非表示用のスコープ、または where.not(hidden: true)
 
   # 検索用スコープ
   scope :search_by_title_and_description, ->(keyword) {

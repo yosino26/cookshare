@@ -4,10 +4,10 @@ class RecipesController < ApplicationController
   before_action :correct_user, only: [:edit, :update, :destroy]
 
   def index
-    @recipes = Recipe.includes(:user, image_attachment: :blob)
-    .recent
-    .page(params[:page])
-    .per(12)
+    @recipes = Recipe.published
+                     .includes(:user, image_attachment: :blob)
+                     .recent
+                     
 
     # 検索機能
     if params[:search].present?
@@ -33,6 +33,8 @@ class RecipesController < ApplicationController
   
    # ページネーション
    @recipes = @recipes.page(params[:page]).per(12)
+  # ページネーションは最後に一回
+   @recipes = @recipes.page(params[:page]).per(12)
    
    # 統計情報
    @total_recipes = Recipe.count
@@ -41,8 +43,12 @@ class RecipesController < ApplicationController
   end
 
   def show
-    # @recipeは before_action で設定済み
-    @user   = @recipe.user   # ←@user が nil（→ avatar で落ちる）を防ぐ
+    # @recipe は set_recipe 済み
+    @user = @recipe.user
+  
+    if @recipe.hidden? && !(user_signed_in? && (current_user.admin? || current_user.id == @recipe.user_id))
+      raise ActiveRecord::RecordNotFound
+    end
   end
 
 
@@ -84,10 +90,9 @@ class RecipesController < ApplicationController
   def feed
     if user_signed_in?
       # フォローしているユーザーのレシピ + 自分のレシピ
-      following_ids = current_user.followings.pluck(:id)
-      following_ids << current_user.id
-      
-      @recipes = Recipe.includes(:user, :favorites, :ratings)
+      following_ids = current_user.followings.pluck(:id) << current_user.id
+      @recipes = Recipe.published
+                       .includes(:user, :favorites, :ratings)
                        .where(user_id: following_ids)
                        .recent
                        .page(params[:page]).per(10)
