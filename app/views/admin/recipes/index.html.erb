@@ -243,36 +243,39 @@
                   <%= recipe.created_at.strftime("%Y/%m/%d %H:%M") %>
                 </small>
               </div>
-              
-              <!-- アクションボタン -->
-              <div class="card-footer bg-transparent">
-                <div class="btn-group w-100" role="group">
-                  <%= link_to admin_recipe_path(recipe), class: "btn btn-sm btn-outline-primary" do %>
-                    <i class="fas fa-eye"></i>
-                  <% end %>
-                  <% if recipe.hidden? %>
-                    <%= link_to unhide_admin_recipe_path(recipe),
-                        method: :patch,
-                        data: { turbo_method: :patch, confirm: "このレシピを公開しますか？" },
-                        class: "btn btn-sm btn-outline-success" do %>
-                      <i class="fas fa-eye"></i>
-                    <% end %>
-                  <% else %>
-                    <%= link_to hide_admin_recipe_path(recipe),
-                        method: :patch,
-                        data: { turbo_method: :patch, confirm: "このレシピを非公開にしますか？" },
-                        class: "btn btn-sm btn-outline-warning" do %>
-                      <i class="fas fa-eye-slash"></i>
-                    <% end %>
-                  <% end %>
-                  <%= link_to admin_recipe_path(recipe),
-                      method: :delete,
-                      data: { turbo_method: :delete, confirm: "このレシピを削除しますか？この操作は取り消せません。" },
-                      class: "btn btn-sm btn-outline-danger" do %>
-                    <i class="fas fa-trash"></i>
-                  <% end %>
-                </div>
-              </div>
+          
+             <!-- アクションボタン修正部分 -->
+             <div class="card-footer bg-transparent">
+               <div class="btn-group w-100 admin-card-actions" role="group">
+                 <%= link_to admin_recipe_path(recipe), class: "btn btn-outline-primary" do %>
+                   <i class="fas fa-eye"></i><span class="d-none d-sm-inline ms-1">詳細</span>
+                 <% end %>
+             
+                 <% if recipe.hidden? %>
+                   <%= link_to unhide_admin_recipe_path(recipe),
+                       method: :patch,
+                       data: { turbo_method: :patch, confirm: "このレシピを公開しますか？" },
+                       class: "btn btn-outline-success" do %>
+                     <i class="fas fa-eye"></i><span class="d-none d-sm-inline ms-1">公開</span>
+                   <% end %>
+                 <% else %>
+                   <%= link_to hide_admin_recipe_path(recipe),
+                       method: :patch,
+                       data: { turbo_method: :patch, confirm: "このレシピを非公開にしますか？" },
+                       class: "btn btn-outline-warning" do %>
+                     <i class="fas fa-eye-slash"></i><span class="d-none d-sm-inline ms-1">非公開</span>
+                   <% end %>
+                 <% end %>
+             
+                 <%= link_to admin_recipe_path(recipe),
+                     method: :delete,
+                     data: { turbo_method: :delete, confirm: "このレシピを削除しますか？この操作は取り消せません。" },
+                     class: "btn btn-outline-danger" do %>
+                   <i class="fas fa-trash"></i><span class="d-none d-sm-inline ms-1">削除</span>
+                 <% end %>
+               </div>
+             </div>
+      
             </div>
           </div>
         <% end %>
