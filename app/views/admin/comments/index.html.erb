@@ -272,10 +272,11 @@
                               data-bs-toggle="dropdown">
                         <i class="fas fa-cog"></i>
                       </button>
+                      <!-- アクションボタン -->
                       <ul class="dropdown-menu">
                         <% if comment.hidden? %>
                           <li>
-                            <%= link_to show_admin_comment_path(comment), 
+                            <%= link_to unhide_admin_comment_path(comment), 
                                 method: :patch,
                                 class: "dropdown-item",
                                 data: { turbo_method: :patch } do %>
