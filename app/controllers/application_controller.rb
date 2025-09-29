@@ -1,4 +1,5 @@
 class ApplicationController < ActionController::Base
+    
     # CSRF保護
     protect_from_forgery with: :exception
   
@@ -8,7 +9,7 @@ class ApplicationController < ActionController::Base
 
     # Deviseの画面（ログイン/新規登録/パスワード系）は認証スキップ
     skip_before_action :authenticate_user!, if: :devise_controller?
-    before_action :reject_suspended_user
+    before_action :enforce_suspension   #  停止ユーザーの強制ログアウト
   
     protected
     # Deviseのパラメータ設定（既存）
@@ -24,7 +25,7 @@ class ApplicationController < ActionController::Base
    def authenticate_admin!
      unless user_signed_in? && current_user.admin?
        flash[:alert] = "管理者権限が必要です"
-       redirect_to root_path
+       redirect_to root_path and return
      end
    end
    
@@ -37,7 +38,7 @@ class ApplicationController < ActionController::Base
    def current_user_admin?
      user_signed_in? && current_user.admin?
    end
-   
+
    # ヘルパーメソッドとしてビューでも使用可能にする
    helper_method :current_user_admin?
  
@@ -60,13 +61,13 @@ class ApplicationController < ActionController::Base
      end
    end
 
-   # アカウント停止か判断
-   def reject_suspended_user
-     return unless user_signed_in?
-     if current_user.suspended?
-       sign_out current_user
-       redirect_to new_user_session_path, alert: 'アカウントは停止中です。'
-     end
-   end
+   #  停止ユーザーの強制ログアウト
+   def enforce_suspension
+    return unless current_user
+    if current_user.suspended?  # モデルに true/false を返すメソッド
+      sign_out current_user
+      redirect_to new_user_session_path, alert: 'アカウントは停止中です。' and return
+    end
+  end
 
 end
