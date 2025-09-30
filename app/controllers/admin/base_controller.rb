@@ -1,6 +1,7 @@
 class Admin::BaseController < ApplicationController
   # 全ての管理者コントローラーで管理者認証を必須にする
   before_action :authenticate_admin!
+  before_action :require_admin!
   
   # 管理者専用レイアウトを使用
   layout 'admin'
@@ -30,4 +31,16 @@ class Admin::BaseController < ApplicationController
     flash[:alert] = "エラーが発生しました: #{error.message}"
     redirect_to admin_root_path
   end
+
+  def require_admin!
+    return if current_user&.admin?
+
+    respond_to do |f|
+      f.html        { redirect_to root_path, alert: '管理者権限が必要です' }
+      f.turbo_stream{ redirect_to root_path, alert: '管理者権限が必要です' }
+      f.json        { head :forbidden }
+      f.csv         { head :forbidden }
+    end
+  end
+  
 end

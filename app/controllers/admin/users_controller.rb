@@ -8,43 +8,6 @@ class Admin::UsersController < Admin::BaseController
     @stats = Admin::UserStats.call
   end
 
-  # ユーザーCSVエクスポート
-  def export
-    scope = Admin::UsersQuery.new(filter_params).call
-
-    preload_assocs = []
-    preload_assocs << :recipes  if User.reflect_on_association(:recipes)
-    preload_assocs << :comments if User.reflect_on_association(:comments)
-    scope = scope.includes(preload_assocs) if preload_assocs.any?
-
-    require 'csv'
-    csv = CSV.generate(headers: true) do |c|
-      headers = %w[id name email admin created_at]
-      headers << 'recipes_count'   if User.reflect_on_association(:recipes)
-      headers << 'comments_count'  if User.reflect_on_association(:comments)
-      headers << 'last_sign_in_at' if User.column_names.include?('last_sign_in_at')
-      c << headers
-
-      scope.find_each do |u|
-        row = [
-          u.id,
-          (u.respond_to?(:display_name) ? u.display_name : u.name),
-          u.email,
-          u.admin?,
-          u.created_at
-        ]
-        row << (u.respond_to?(:recipes)  ? u.recipes.size  : nil) if headers.include?('recipes_count')
-        row << (u.respond_to?(:comments) ? u.comments.size : nil) if headers.include?('comments_count')
-        row << u[:last_sign_in_at] if headers.include?('last_sign_in_at')
-        c << row
-      end
-    end
-
-    send_data csv,
-              filename: "users_#{Time.zone.now.strftime('%Y%m%d_%H%M%S')}.csv",
-              type: 'text/csv'
-  end
-
   def show
     @user_stats = {
       recipes_count:    @user.recipes.count,
@@ -123,9 +86,35 @@ class Admin::UsersController < Admin::BaseController
     @user.update!(admin: true)
     redirect_back fallback_location: admin_users_path, notice: '管理者に昇格しました'
   end
+  
+  # ユーザーCSVエクスポート
+  require 'csv'
+  def export
+    scope = Admin::UsersQuery.new(filter_params).call
+  
+    bom = "\uFEFF" # UTF-8 BOM for Excel
+    filename = "users_#{Time.zone.now.strftime('%Y%m%d_%H%M')}_jst.csv"
+  
+    headers['Content-Type']        = 'text/csv; charset=UTF-8'
+    headers['Content-Disposition'] = "attachment; filename=\"#{filename}\""
+    headers['X-Accel-Buffering']   = 'no' # nginxのバッファ無効化（任意）
+  
+    self.response_body = Enumerator.new do |y|
+      y << bom
+      y << CSV.generate_line(%w[id name email role last_sign_in_at], force_quotes: true, row_sep: "\r\n")
+      scope.find_each(batch_size: 1000) do |u|
+        y << CSV.generate_line([
+          u.id,
+          csv_safe(u.name),
+          csv_safe(u.email),
+          (u.admin? ? 'admin' : 'user'),
+          u.last_sign_in_at&.in_time_zone('Asia/Tokyo')&.strftime('%Y-%m-%d %H:%M')
+        ], force_quotes: true, row_sep: "\r\n")
+      end
+    end
+  end
 
   private
-
   def set_user
     @user = User.find(params[:id])
   end
@@ -145,4 +134,14 @@ class Admin::UsersController < Admin::BaseController
     n = filter_params[:per_page].to_i
     [20, 50, 100].include?(n) ? n : 20
   end
+
+
+  CSV_INJECTION_PREFIX = /^(=|\+|-|@|\t)/
+  def csv_safe(val)
+    s = val.to_s.gsub(/\r\n|\r|\n/, ' ') # セル内改行→空白
+    s = "'#{s}" if s.match?(CSV_INJECTION_PREFIX) # 式扱い回避
+    s
+  end
+
+
 end
