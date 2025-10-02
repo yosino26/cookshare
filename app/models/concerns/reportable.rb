@@ -9,8 +9,7 @@ module Reportable
   
   # このモデルが特定のユーザーによってレポートされているかチェック
   def reported_by?(user)
-    return false unless user
-    reports.exists?(reporter: user)
+    reports.where(reporter: user).exists?
   end
   
   # このモデルに対するレポート数を取得
@@ -27,4 +26,5 @@ module Reportable
   def pending_reports_count
     reports.pending.count
   end
+
 end
