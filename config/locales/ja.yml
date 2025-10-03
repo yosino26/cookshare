@@ -1,0 +1,28 @@
+ja:
+  reports:
+    created: "通報を受け付けました"
+    create_failed: "通報に失敗しました。入力内容をご確認ください"
+    already_reported: "この対象は既に通報済みです"
+    report_this: "通報する"
+    reason_help: "最も近い理由を選択してください"
+    description_placeholder: "具体的な問題点を記入してください"
+    submit: "通報する"
+    aria_report_recipe: "このレシピを通報する"
+  activerecord:
+    attributes:
+      report:
+        reason: "通報理由"
+        description: "詳細説明"
+        reasons:
+          spam: "スパム"
+          inappropriate: "不適切な表現"
+          copyright: "著作権侵害"
+          other: "その他"
+    errors:
+      models:
+        report:
+          attributes:
+            reporter_id:
+              already_reported: "同じ対象は一度しか通報できません"
+  common:
+    cancel: "キャンセル"
