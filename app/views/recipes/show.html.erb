@@ -226,6 +226,18 @@
                     </small>
                   </div>
                 </div>
+                <!-- 通報ボタン -->
+                <div class="btn-group">
+                  <% if user_signed_in? && current_user != comment.user %>
+                    <% if !comment.reported_by?(current_user) %>
+                      <%= link_to "このコメントを通報",
+                          new_report_path(comment_id: comment.id),
+                          class: "btn btn-outline-danger btn-sm",
+                          "aria-label": "Report this comment" %>
+                    <% else %>
+                      <button class="btn btn-outline-secondary btn-sm" disabled>通報済み</button>
+                    <% end %>
+                  <% end %>
 
                 <% if current_user == comment.user %>
                   <%= link_to "削除", recipe_comment_path(@recipe, comment),
@@ -260,7 +272,20 @@
     </div>
   </div>
 </div>
-
+<!-- 通報ボタン -->
+<% unless @recipe.user == current_user %>
+  <% if user_signed_in? && !@recipe.reported_by?(current_user) %>
+    <%= link_to t("reports.report_this"),
+        new_report_path(recipe_id: @recipe.id),
+        class: "btn btn-outline-danger btn-sm", "aria-label": t("reports.aria_report_recipe") %>
+  <% end %>
+<% end %>
 <div class="text-center mt-4">
   <%= link_to "レシピ一覧に戻る", recipes_path, class: "btn btn-outline-primary" %>
+</div>
+<% if user_signed_in? %>
+<%= link_to "マイページ", user_path(current_user), class: "btn btn-primary" %>
+<% end %>
+
+<%= link_to "投稿者ページ", user_path(@recipe.user), class: "btn btn-outline-secondary" %>
 </div>

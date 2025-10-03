@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_09_26_065752) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_02_115529) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -151,6 +151,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_26_065752) do
     t.index ["admin_user_id"], name: "index_reports_on_admin_user_id"
     t.index ["created_at"], name: "index_reports_on_created_at"
     t.index ["reportable_type", "reportable_id"], name: "index_reports_on_reportable"
+    t.index ["reporter_id", "reportable_type", "reportable_id"], name: "idx_reports_uniqueness_on_reporter_and_reportable", unique: true
     t.index ["reporter_id", "reportable_type", "reportable_id"], name: "index_reports_on_reporter_and_reportable", unique: true
     t.index ["reporter_id"], name: "index_reports_on_reporter_id"
     t.index ["status"], name: "index_reports_on_status"

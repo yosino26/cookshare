@@ -1,2 +1,39 @@
-<h1>Reports#new</h1>
-<p>Find me in app/views/reports/new.html.erb</p>
+<div class="container mt-4">
+  <h2>通報フォーム</h2>
+  <p class="text-muted">
+    対象: <%= @reportable.class.model_name.human %>
+  </p>
+
+    <%# ← 先に戻り先を決める %>
+    <% back_path =
+    case @reportable
+    when Recipe  then recipe_path(@reportable)
+    when Comment then recipe_path(@reportable.recipe)
+    when User    then user_path(@reportable)
+    else root_path
+    end
+  %>
+
+  <%= form_with model: @report, url: reports_path(
+        reportable_type: @reportable.class.name,
+        reportable_id: @reportable.id
+      ), class: "needs-validation" do |f| %>
+
+    <div class="mb-3">
+      <%= f.label :reason, t("activerecord.attributes.report.reason"), class: "form-label" %>
+      <%= f.select :reason, Report.reasons.keys.map { |k|
+            [t("activerecord.attributes.report.reasons.#{k}"), k]
+          }, {}, class: "form-select", required: true, aria: { describedby: "reasonHelp" } %>
+      <div id="reasonHelp" class="form-text"><%= t("reports.reason_help") %></div>
+    </div>
+
+    <div class="mb-3">
+      <%= f.label :description, t("activerecord.attributes.report.description"), class: "form-label" %>
+      <%= f.text_area :description, rows: 5, class: "form-control",
+            placeholder: t("reports.description_placeholder"), required: true %>
+    </div>
+
+    <%= f.submit t("reports.submit"), class: "btn btn-danger" %>
+    <%= link_to t("common.cancel"), back_path,   class: "btn btn-secondary" %>
+  <% end %>
+</div>
