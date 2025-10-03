@@ -4,7 +4,6 @@ Rails.application.routes.draw do
 
   # トップページ
   root 'recipes#index'
-
   # レシピ
   resources :recipes do
     collection do
@@ -15,15 +14,13 @@ Rails.application.routes.draw do
     resources :comments, only: [:create, :destroy]
     resources :ratings,  only: [:create]
   end
-
   # ユーザー
   resources :users, only: [:show, :edit, :update] do
     member { get :favorites }
     resource :follow, only: [:create, :destroy]
   end
-
   # レポート（公開側）
-  resources :reports, only: [:create]
+  resources :reports, only: [:new, :create]
   get 'reports/recipes/:recipe_id/new',   to: 'reports#new', as: :new_recipe_report
   get 'reports/comments/:comment_id/new', to: 'reports#new', as: :new_comment_report
   get 'reports/users/:user_id/new',       to: 'reports#new', as: :new_user_report
