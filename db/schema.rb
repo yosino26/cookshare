@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_02_115529) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_04_090345) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -142,7 +142,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_02_115529) do
     t.bigint "reportable_id", null: false, comment: "報告対象"
     t.text "reason", null: false, comment: "報告理由"
     t.text "description", comment: "詳細説明"
-    t.string "status", default: "pending", null: false, comment: "処理状況"
+    t.string "status", default: "0", null: false, comment: "処理状況"
     t.bigint "admin_user_id", comment: "対応した管理者"
     t.text "admin_response", comment: "管理者からの回答"
     t.datetime "resolved_at", comment: "解決日時"

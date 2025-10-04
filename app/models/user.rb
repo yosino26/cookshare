@@ -1,5 +1,5 @@
 class User < ApplicationRecord
-  include Reportable
+  include Reportable  # has_many :reports, as: :reportable （= 通報“される”側）   
 
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable,
@@ -14,7 +14,8 @@ class User < ApplicationRecord
   has_many :comments, dependent: :destroy
   has_one_attached :avatar
   # レポート機能の関連付け（追加）
-  has_many :sent_reports, class_name: 'Report', foreign_key: 'reporter_id', dependent: :destroy
+            # 通報“する”側は別名にする（衝突回避）
+  has_many :submitted_reports, class_name: "Report", foreign_key: :reporter_id, inverse_of: :reporter, dependent: :nullify
   has_many :admin_handled_reports, class_name: 'Report', foreign_key: 'admin_user_id', dependent: :nullify
 
 

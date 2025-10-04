@@ -20,45 +20,25 @@ class ReportsController < ApplicationController
       format.js   # Ajax対応を続けるなら残す
     end
   end
-
   def create
-    # 既存あればそれを返し、新規は作らない（UX最適化）
-    @report = current_user.reports.find_or_initialize_by(reportable: @reportable)
+    # × current_user.reports.find_or_initialize_by(...)
+    @report = current_user.submitted_reports.find_or_initialize_by(reportable: @reportable)
     @report.assign_attributes(report_params)
-
-    # 重複チェック（UIガード）
+  
     if @report.persisted?
       flash[:alert] = 'この項目は既にレポート済みです'
       return redirect_back(fallback_location: @reportable)
     end
-
-    # 自分自身/自分の投稿は通報不可（任意）
-    if reporting_own_resource?
-      flash[:alert] = '自身や自分の投稿はレポートできません'
-      return redirect_back(fallback_location: @reportable)
+  
+    if @report.save
+      flash[:success] = 'レポートを送信しました。内容を確認後、対応いたします。'
+      redirect_back(fallback_location: @reportable)
+    else
+      render :new, status: :unprocessable_content  # Rack 3 対応
     end
-
-    respond_to do |format|
-      begin
-        if @report.save
-          format.html do
-            flash[:success] = 'レポートを送信しました。内容を確認後、対応いたします。'
-            redirect_back(fallback_location: @reportable)
-          end
-          format.js { flash.now[:success] = 'レポートを送信しました' }
-        else
-          format.html { render :new, status: :unprocessable_entity }
-          format.js   { render :new, status: :unprocessable_entity }
-        end
-      rescue ActiveRecord::RecordNotUnique
-        # 競合で同時に作られた場合の最終防衛
-        format.html do
-          flash[:info] = 'この項目は既にレポート済みです'
-          redirect_back(fallback_location: @reportable)
-        end
-        format.js { head :conflict }
-      end
-    end
+  rescue ActiveRecord::RecordNotUnique
+    flash[:info] = 'この項目は既にレポート済みです'
+    redirect_back(fallback_location: @reportable)
   end
 
   private
