@@ -1,16 +1,17 @@
-# 
 class Admin::ReportsController < Admin::BaseController
   before_action :set_report, only: [:show, :resolve, :dismiss, :investigate]
   before_action :set_admin_breadcrumbs
 
   def index
-    @reports = build_reports_query
     @filter_params = filter_params
+    @reports = build_reports_query
+    preload_reportables(@reports)  # ← 型ごとの深い関連をプリロード
     @stats = report_stats
   end
 
   def show
     @report = Report.includes(:reporter, :reportable, :admin_user).find(params[:id])
+    preload_reportables([@report])  # ← 1件でも統一（任意だが推奨）
     add_breadcrumb("レポート詳細", admin_report_path(@report))
   end
 
@@ -35,7 +36,7 @@ class Admin::ReportsController < Admin::BaseController
   end
 
   def investigate
-    if @report.update(status: 'investigating', admin_user: current_user)
+    if @report.update(status: :investigating, admin_user: current_user) # ← シンボルで統一
       log_admin_action("started investigating report", @report)
       flash[:info] = 'レポートの調査を開始しました'
     else
@@ -45,36 +46,50 @@ class Admin::ReportsController < Admin::BaseController
   end
 
   private
+  def preload_reportables(reports)
+    recipes  = []
+    comments = []
+  
+    reports.each do |r|
+      case r.reportable_type
+      when "Recipe"  then recipes  << r.reportable
+      when "Comment" then comments << r.reportable
+      end
+    end
+  
+    # Rails 7.1+ の正しい呼び方（配列が空でもOK）
+    ActiveRecord::Associations::Preloader.new(
+      records: recipes,
+      associations: :user
+    ).call
+  
+    ActiveRecord::Associations::Preloader.new(
+      records: comments,
+      associations: [:user, :recipe]
+    ).call
+  end
 
   def set_report
     @report = Report.find(params[:id])
   end
 
   def build_reports_query
-    reports = Report.includes(:reporter, :reportable, :admin_user)
-    
-    # ステータスでフィルタリング
+    reports = Report.includes(:reporter, :reportable, :admin_user)  # 深い先はpreloadで
+
     reports = reports.where(status: params[:status]) if params[:status].present?
-    
-    # 報告対象のタイプでフィルタリング
     reports = reports.where(reportable_type: params[:reportable_type]) if params[:reportable_type].present?
-    
-    # 期間でフィルタリング
+
     if params[:date_from].present?
       reports = reports.where('created_at >= ?', Date.parse(params[:date_from]))
     end
-    
     if params[:date_to].present?
       reports = reports.where('created_at <= ?', Date.parse(params[:date_to]).end_of_day)
     end
-    
-    # ソート
-    sort_column = params[:sort].presence || 'created_at'
+
+    sort_column   = params[:sort].presence || 'created_at'
     sort_direction = params[:direction].presence || 'desc'
-    
     reports = reports.order("#{sort_column} #{sort_direction}")
-    
-    # ページネーション
+
     reports.page(params[:page]).per(20)
   end
 
@@ -101,6 +116,6 @@ class Admin::ReportsController < Admin::BaseController
   end
 
   def add_breadcrumb(name, path)
-    @breadcrumbs << { name: name, path: path }
+    @breadcrumbs <<({ name: name, path: path })
   end
 end
