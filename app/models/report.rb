@@ -24,9 +24,21 @@ class Report < ApplicationRecord
   scope :by_reportable_type, ->(type) { type.present? ? where(reportable_type: type) : all }
 
   # ===== Defaults =====
-  after_initialize do
-    self.status ||= :pending if new_record?
-  end
+  after_initialize :set_default_status, if: :new_record?
+
+  STATUS_COLOR = {
+    'pending'       => 'warning',
+    'investigating' => 'info',
+    'resolved'      => 'success',
+    'dismissed'     => 'secondary'
+  }.freeze
+
+  STATUS_JA = {
+    'pending'       => '未対応',
+    'investigating' => '調査中',
+    'resolved'      => '対応済み',
+    'dismissed'     => '却下'
+  }.freeze
 
   # ===== State Transitions =====
   def resolve!(admin, response = nil)
@@ -80,5 +92,26 @@ class Report < ApplicationRecord
     where(reporter: user, reportable: record).exists?
   end
 
+  def status_color
+    STATUS_COLOR[status] || 'secondary'
+  end
+
+  def status_japanese
+    STATUS_JA[status] || '未設定'
+  end
+
+  def reportable_admin_path
+    return nil unless reportable
+    helpers = Rails.application.routes.url_helpers
+    helpers.polymorphic_path([:admin, reportable])
+  rescue NoMethodError, ArgumentError
+    helpers.polymorphic_path(reportable) rescue nil
+  end
+
   class StateError < StandardError; end
+
+  private
+  def set_default_status
+    self.status ||= :pending
+  end
 end

@@ -1,5 +1,5 @@
 class Admin::ReportsController < Admin::BaseController
-  before_action :set_report, only: [:show, :resolve, :dismiss, :investigate]
+  before_action :set_report, only: [:resolve, :dismiss, :investigate]
   before_action :set_admin_breadcrumbs
 
   def index
@@ -11,8 +11,28 @@ class Admin::ReportsController < Admin::BaseController
 
   def show
     @report = Report.includes(:reporter, :reportable, :admin_user).find(params[:id])
-    preload_reportables([@report])  # ← 1件でも統一（任意だが推奨）
-    add_breadcrumb("レポート詳細", admin_report_path(@report))
+  
+    # 同一報告者の他レポート
+    @reporter_reports =
+      if @report.reporter_id.present?
+        Report.where(reporter_id: @report.reporter_id)
+              .where.not(id: @report.id)
+              .order(created_at: :desc)
+              .limit(10)
+      else
+        Report.none
+      end
+  
+    # 同一対象への他レポート
+    @related_reports =
+      if @report.reportable_type.present? && @report.reportable_id.present?
+        Report.where(reportable_type: @report.reportable_type, reportable_id: @report.reportable_id)
+              .where.not(id: @report.id)
+              .order(created_at: :desc)
+              .limit(10)
+      else
+        Report.none
+      end
   end
 
   def resolve

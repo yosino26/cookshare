@@ -23,15 +23,20 @@
       <div class="card-header d-flex justify-content-between align-items-start">
         <div>
           <h5 class="mb-1">
-            <span class="badge bg-<%= @report.status_color %> me-2">
-              <%= @report.status_japanese %>
+            <span class="badge bg-<%= @report.respond_to?(:status_color) ? @report.status_color : 'secondary' %> me-2">
+              <%= @report.respond_to?(:status_japanese) ? @report.status_japanese : '未設定' %>
             </span>
+            
             <%= @report.reportable_type_japanese %>への報告
           </h5>
+
           <small class="text-muted">
-            <i class="fas fa-clock me-1"></i>
-            <%= @report.created_at.strftime("%Y年%m月%d日 %H:%M") %>
-            (<%= time_ago_in_words(@report.created_at) %>前)
+            <% owner =
+                 case @report.reportable
+                 when Recipe, Comment then @report.reportable&.user
+                 when User            then @report.reportable
+                 end %>
+            by <%= owner&.respond_to?(:display_name) ? owner.display_name : (owner&.name || '不明') %>
           </small>
         </div>
         <div>
@@ -57,14 +62,13 @@
               <% end %>
               <div>
                 <div class="fw-medium">
-                  <%= link_to @report.reporter.display_name, admin_user_path(@report.reporter), 
-                      class: "text-decoration-none" %>
-                </div>
-                <small class="text-muted"><%= @report.reporter.email %></small>
-                <div>
-                  <span class="badge bg-light text-dark">
-                    登録: <%= @report.reporter.created_at.strftime("%Y/%m/%d") %>
-                  </span>
+                  <% if @report.reportable.present? %>
+                    <%= link_to @report.reportable_title,
+                                polymorphic_path([:admin, @report.reportable]),
+                                class: "text-decoration-none" %>
+                  <% else %>
+                    <span class="text-muted"><%= @report.reportable_title %>（削除済み）</span>
+                  <% end %>
                 </div>
               </div>
             </div>
@@ -109,7 +113,7 @@
                       class: "text-decoration-none" %>
                 </div>
                 <small class="text-muted">
-                  by <%= @report.reportable_user_name %>
+                  by <%= report_owner_name(@report) %>
                 </small>
                 <div class="mt-1">
                   <span class="badge bg-light text-dark">
@@ -173,12 +177,12 @@
           </div>
         <% end %>
 
-        <% if @report.admin_note.present? %>
+        <% if @report.admin_response.present? %>
           <div class="bg-light p-3 rounded">
             <small class="text-muted d-block mb-2">
               <%= @report.updated_at.strftime("%Y年%m月%d日 %H:%M") %>更新
             </small>
-            <div style="white-space: pre-line;"><%= @report.admin_note %></div>
+            <div style="white-space: pre-line;"><%= @report.admin_response %></div>
           </div>
         <% end %>
       </div>
@@ -333,7 +337,7 @@
           <h6 class="text-muted">統計</h6>
           <ul class="list-unstyled small">
             <li>報告者レポート数: <%= @reporter_reports.count %>件</li>
-            <li>対象レポート数: <%= @target_reports.count %>件</li>
+            <li>対象レポート数: <%= @related_reports.count %>件</li> </li>
             <li>今月のレポート数: <%= Report.where(created_at: Time.current.beginning_of_month..Time.current.end_of_month).count %>件</li>
           </ul>
         </div>
