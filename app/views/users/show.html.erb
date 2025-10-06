@@ -121,4 +121,16 @@
       </div>
     <% end %>
   </div>
+
+    <!-- 通報ボタン（ユーザー通報） -->
+    <% if user_signed_in? && current_user != @user %>
+      <% unless @user.reported_by?(current_user) %>
+        <%= link_to t("reports.report_this_user", default: "このユーザーを通報"),
+            new_report_path(user_id: @user.id),
+            class: "btn btn-outline-danger btn-sm",
+            "aria-label": t("reports.aria_report_user", default: "Report this user") %>
+      <% else %>
+        <span class="text-muted small"><%= t("reports.already_reported", default: "通報済み") %></span>
+      <% end %>
+    <% end %>
 </div>

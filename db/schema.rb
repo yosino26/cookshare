@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_09_26_065752) do
+ActiveRecord::Schema[7.1].define(version: 2025_10_06_132832) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -140,9 +140,9 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_26_065752) do
     t.bigint "reporter_id", null: false, comment: "報告したユーザー"
     t.string "reportable_type", null: false
     t.bigint "reportable_id", null: false, comment: "報告対象"
-    t.text "reason", null: false, comment: "報告理由"
+    t.integer "reason", default: 3, null: false, comment: "報告理由"
     t.text "description", comment: "詳細説明"
-    t.string "status", default: "pending", null: false, comment: "処理状況"
+    t.integer "status", default: 0, null: false, comment: "処理状況"
     t.bigint "admin_user_id", comment: "対応した管理者"
     t.text "admin_response", comment: "管理者からの回答"
     t.datetime "resolved_at", comment: "解決日時"
@@ -151,9 +151,11 @@ ActiveRecord::Schema[7.1].define(version: 2025_09_26_065752) do
     t.index ["admin_user_id"], name: "index_reports_on_admin_user_id"
     t.index ["created_at"], name: "index_reports_on_created_at"
     t.index ["reportable_type", "reportable_id"], name: "index_reports_on_reportable"
+    t.index ["reporter_id", "reportable_type", "reportable_id"], name: "idx_reports_uniqueness_on_reporter_and_reportable", unique: true
     t.index ["reporter_id", "reportable_type", "reportable_id"], name: "index_reports_on_reporter_and_reportable", unique: true
     t.index ["reporter_id"], name: "index_reports_on_reporter_id"
     t.index ["status"], name: "index_reports_on_status"
+    t.check_constraint "status = ANY (ARRAY[0, 1, 2, 3])", name: "reports_status_enum"
   end
 
   create_table "steps", force: :cascade do |t|

@@ -219,15 +219,15 @@
                     </span>
                   </div>
                   <div class="mt-1">
-                    <strong><%= truncate(report.reportable_title, length: 40) %></strong>
+                    <strong><%= truncate(report.reportable_title.to_s, length: 40) %></strong>
                   </div>
                   <% if report.reportable_type == 'Recipe' %>
                     <small class="text-muted">
-                      by <%= report.reportable.user.display_name %>
+                      by <%= report.reportable&.user&.display_name || "不明" %>
                     </small>
                   <% elsif report.reportable_type == 'Comment' %>
                     <small class="text-muted">
-                      on <%= truncate(report.reportable.recipe.title, length: 20) %>
+                      on <%= truncate(report.reportable&.recipe&.title.to_s, length: 20) %>
                     </small>
                   <% end %>
                 </td>
@@ -308,12 +308,12 @@
                     <% elsif report.investigating? %>
                       <small class="text-muted">
                         <i class="fas fa-user me-1"></i>
-                        <%= report.admin_user.display_name %>が調査中
+                        <%= report.admin_user&.display_name || "未割り当て" %> が調査中
                       </small>
                     <% else %>
                       <small class="text-muted">
                         <i class="fas fa-user me-1"></i>
-                        <%= report.admin_user.display_name %>が対応済み
+                        <%= report.admin_user&.display_name || "未割り当て" %> が対応済み
                       </small>
                     <% end %>
                   </div>
@@ -330,7 +330,7 @@
           <div class="text-muted">
             <%= page_entries_info @reports, entry_name: 'レポート' %>
           </div>
-          <%= paginate @reports, theme: 'bootstrap' %>
+          <%= paginate @reports, theme: 'bootstrap4' %>
         </div>
       </div>
     <% else %>

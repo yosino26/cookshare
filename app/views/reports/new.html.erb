@@ -1,2 +1,55 @@
-<h1>Reports#new</h1>
-<p>Find me in app/views/reports/new.html.erb</p>
+<div class="container mt-4">
+  <h2>通報フォーム</h2>
+  <p class="text-muted">
+    対象: <%= @reportable.class.model_name.human %>
+  </p>
+
+  <%# ← 戻り先 %>
+  <% back_path =
+    case @reportable
+    when Recipe  then recipe_path(@reportable)
+    when Comment then recipe_path(@reportable.recipe)
+    when User    then user_path(@reportable)
+    else root_path
+    end
+  %>
+
+
+  <%= form_with model: @report,
+        url: reports_path(reportable_type: @reportable.class.name, reportable_id: @reportable.id),
+        class: "needs-validation",
+        local: true do |f| %>
+
+    <%# ★ エラー表示 %>
+    <% if @report.errors.any? %>
+      <div class="alert alert-danger">
+        <strong><%= t("errors.messages.not_saved", count: @report.errors.count, resource: Report.model_name.human, default: "入力エラーがあります") %></strong>
+        <ul class="mb-0">
+          <% @report.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="mb-3">
+      <%= f.label :reason, t("activerecord.attributes.report.reason"), class: "form-label" %>
+      <%= f.select :reason,
+          Report.reasons.keys.map { |k| [t("activerecord.attributes.report.reasons.#{k}", default: k.humanize), k] },
+          {},
+          class: "form-select",
+          required: true,
+          aria: { describedby: "reasonHelp" } %>
+      <div id="reasonHelp" class="form-text"><%= t("reports.reason_help", default: "最も近い理由を選択してください") %></div>
+    </div>
+
+    <div class="mb-3">
+      <%= f.label :description, t("activerecord.attributes.report.description"), class: "form-label" %>
+      <%= f.text_area :description, rows: 5, class: "form-control",
+            placeholder: t("reports.description_placeholder", default: "具体的な問題点を記入してください（10文字以上）"),
+            required: true %>
+    </div>
+    <%= f.submit t("reports.submit", default: "通報する"), class: "btn btn-danger" %>
+    <%= link_to t("common.cancel", default: "キャンセル"), back_path, class: "btn btn-secondary" %>
+  <% end %>
+</div>
