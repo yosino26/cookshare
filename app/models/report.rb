@@ -4,9 +4,10 @@ class Report < ApplicationRecord
   belongs_to :reportable, polymorphic: true
   belongs_to :admin_user, class_name: 'User', foreign_key: :admin_user_id, optional: true
 
+
   # ===== Validations =====
   validates :reason, presence: true
-  validates :description, presence: true, length: { minimum: 10, maximum: 1000 }
+  validates :description, length: { minimum: 10, maximum: 1000 }, allow_blank: true
   validates :reporter_id, uniqueness: {
     scope: [:reportable_type, :reportable_id],
     message: "既にこの項目をレポートしています"

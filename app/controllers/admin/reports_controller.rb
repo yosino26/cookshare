@@ -1,5 +1,5 @@
 class Admin::ReportsController < Admin::BaseController
-  before_action :set_report, only: [:resolve, :dismiss, :investigate]
+  before_action :set_report, only: [:resolve, :dismiss, :investigate, :update]
   before_action :set_admin_breadcrumbs
 
   def index
@@ -35,6 +35,36 @@ class Admin::ReportsController < Admin::BaseController
       end
   end
 
+  def update
+    if params.dig(:report, :admin_note).present?
+      # 管理者ノート保存
+      if @report.update(admin_note: params[:report][:admin_note], admin_user: current_user)
+        flash[:success] = 'ノートを保存しました'
+        return redirect_to admin_report_path(@report)
+      end
+    end
+
+    case params.dig(:report, :status).to_s
+    when 'investigating'
+      ok = @report.update(status: :investigating, admin_user: current_user)
+    when 'resolved'
+      ok = @report.resolve!(current_user, params[:admin_response]) rescue false
+    when 'dismissed'
+      ok = @report.dismiss!(current_user, params[:admin_response])  rescue false
+    when 'pending'
+      ok = @report.update(status: :pending, admin_user: current_user, admin_response: nil, resolved_at: nil)
+    else
+      ok = false
+      flash[:alert] = '不正なステータスです'
+    end
+
+    if ok
+      flash[:success] ||= '更新しました'
+    else
+      flash[:alert] ||= '更新に失敗しました'
+    end
+    redirect_to admin_report_path(@report)
+  end
   def resolve
     if @report.resolve!(current_user, params[:admin_response])
       log_admin_action("resolved report", @report)

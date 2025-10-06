@@ -204,54 +204,33 @@
           <label class="form-label">ステータス変更</label>
           <div class="d-grid gap-2">
             <% unless @report.investigating? %>
-              <%= link_to admin_report_path(@report), 
-                  method: :patch,
-                  params: { report: { status: :investigating } },
-                  class: "btn btn-outline-info btn-sm",
-                  data: { 
-                    turbo_method: :patch,
-                    confirm: "ステータスを「調査中」に変更しますか？"
-                  } do %>
+                <%= link_to admin_report_path(@report, report: { status: 'investigating' }),
+                class: "btn btn-outline-info btn-sm",
+                data: { turbo_method: :patch, turbo_confirm: "ステータスを「調査中」に変更しますか？" } do %>
                 <i class="fas fa-search me-1"></i>調査中にする
               <% end %>
             <% end %>
 
             <% unless @report.resolved? %>
-              <%= link_to admin_report_path(@report), 
-                  method: :patch,
-                  params: { report: { status: :resolved } },
-                  class: "btn btn-outline-success btn-sm",
-                  data: { 
-                    turbo_method: :patch,
-                    confirm: "ステータスを「解決済み」に変更しますか？"
-                  } do %>
+                <%= link_to admin_report_path(@report, report: { status: 'investigating' }),
+                class: "btn btn-outline-info btn-sm",
+                data: { turbo_method: :patch, turbo_confirm: "ステータスを「調査中」に変更しますか？" } do %>
                 <i class="fas fa-check me-1"></i>解決済みにする
               <% end %>
             <% end %>
 
             <% unless @report.dismissed? %>
-              <%= link_to admin_report_path(@report), 
-                  method: :patch,
-                  params: { report: { status: :dismissed } },
+              <%= link_to admin_report_path(@report, report: { status: 'dismissed' }),
                   class: "btn btn-outline-secondary btn-sm",
-                  data: { 
-                    turbo_method: :patch,
-                    confirm: "このレポートを却下しますか？"
-                  } do %>
+                  data: { turbo_method: :patch, turbo_confirm: "このレポートを却下しますか？" } do %>
                 <i class="fas fa-times me-1"></i>却下する
               <% end %>
             <% end %>
 
-            <% if @report.pending? %>
-              <%= link_to admin_report_path(@report), 
-                  method: :patch,
-                  params: { report: { status: :pending } },
+            <% unless @report.pending? %> <!-- if -> unless に修正 -->
+              <%= link_to admin_report_path(@report, report: { status: 'pending' }),
                   class: "btn btn-outline-warning btn-sm",
-                  data: { 
-                    turbo_method: :patch,
-                    confirm: "ステータスを「未対応」に戻しますか？"
-                  } do %>
-                <i class="fas fa-undo me-1"></i>未対応に戻す
+                  data: { turbo_method: :patch, turbo_confirm: "ステータスを「未対応」に戻しますか？" } do %>
               <% end %>
             <% end %>
           </div>
