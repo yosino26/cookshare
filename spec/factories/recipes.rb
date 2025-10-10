@@ -5,5 +5,6 @@ FactoryBot.define do
     description { "テスト用の説明文です。" }
     cooking_time { 10 }
     servings { 2 }
+    hidden { false } 
   end
 end
