@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :follow do
-    follower { nil }
-    following { nil }
+    association :follower,  factory: :user
+    association :following, factory: :user
   end
 end
