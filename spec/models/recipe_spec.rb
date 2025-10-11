@@ -9,4 +9,16 @@ require 'rails_helper'
         expect(Recipe.published).not_to include(unpub)
       end
     end
+    it "descriptionは10文字ちょうどでOK / 9文字はNG" do
+      ok  = build(:report, description: "あ" * 10)
+      ng  = build(:report, description: "あ" * 9)
+      expect(ok).to be_valid
+      expect(ng).to be_invalid
+    end
+    
+    it "reasonは必須" do
+      r = build(:report, reason: nil)
+      expect(r).to be_invalid
+      expect(r.errors[:reason]).to be_present
+    end
 end
