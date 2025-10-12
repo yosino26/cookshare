@@ -1,6 +1,5 @@
 FactoryBot.define do
   factory :category do
-    name { "MyString" }
-    description { "MyText" }
+    sequence(:name) { |n| "カテゴリ#{n}" }
   end
 end
