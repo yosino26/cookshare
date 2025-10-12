@@ -2,6 +2,6 @@ FactoryBot.define do
   factory :comment do
     association :user
     association :recipe
-    content { "コメント本文" }
+    content { "おいしそう！" }  # ← body → content に変更
   end
 end
