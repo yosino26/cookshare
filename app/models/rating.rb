@@ -3,7 +3,7 @@ class Rating < ApplicationRecord
   belongs_to :recipe
 
   validates :score, presence: true, inclusion: { in: 1..5 }
-  validates :user_id, uniqueness: { scope: :recipe_id }
+  validates :recipe_id, uniqueness: { scope: :user_id } 
   
   # 星の表示用
   def stars

@@ -1,9 +1,10 @@
 FactoryBot.define do
   factory :recipe do
-    title { "MyString" }
-    description { "MyText" }
-    cooking_time { 1 }
-    servings { 1 }
-    user { nil }
+    association :user
+    title { "テストレシピ" }
+    description { "テスト用の説明文です。" }
+    cooking_time { 10 }
+    servings { 2 }
+    hidden { false } 
   end
 end

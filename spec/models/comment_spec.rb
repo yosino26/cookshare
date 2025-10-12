@@ -1,5 +1,13 @@
 require 'rails_helper'
 
 RSpec.describe Comment, type: :model do
-  pending "add some examples to (or delete) #{__FILE__}"
+  it { should belong_to(:user) }
+  it { should belong_to(:recipe) }
+  it { should validate_presence_of(:content) }  # ← body → content に変更
+
+  it "レシピ削除で巻き添え削除" do
+    recipe = create(:recipe)
+    create(:comment, recipe: recipe)
+    expect { recipe.destroy }.to change { Comment.count }.by(-1)
+  end
 end
