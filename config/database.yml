@@ -82,6 +82,4 @@ test:
 #
 production:
   <<: *default
-  database: cookshare_production
-  username: cookshare
-  password: <%= ENV["COOKSHARE_DATABASE_PASSWORD"] %>
+  url: <%= ENV["DATABASE_URL"] %>
