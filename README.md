@@ -65,5 +65,23 @@ URL: [https://cookshare-ygta.onrender.com/](https://cookshare-ygta.onrender.com/
 | テスト | モデル / バリデーション / 一意制約テスト | ⏳進行中 |
 
 ---
-
 ## 💡 工夫・こだわりポイント
+
+- **管理画面の設計**  
+  - 管理者専用の`Admin`名前空間を設け、アクセス制御を明確化。  
+  - ダッシュボードに「未対応通報数バッジ」を実装し、運営効率を向上。
+
+- **通報機能（Phase 32–33）**  
+  - Polymorphic設計で `User / Recipe / Comment` のいずれも通報可能に。  
+  - 状態管理を `enum` で管理（`pending / investigating / resolved / dismissed`）。
+
+- **保守性を意識した構成**  
+  - モデル間の依存を `Concern`（例：Reportable）に切り出し再利用性を向上。  
+  - バリデーションやenum定義を明確化して不整合を防止。  
+  - N+1問題対策として `includes` を徹底。
+
+- **テストコード導入**  
+  - FactoryBotとShoulda-Matchersを利用し、バリデーション・関連・一意制約を自動テスト。  
+  - Phase 34ではController・Systemテストも拡充予定。
+
+---
