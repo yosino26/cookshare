@@ -1,24 +1,69 @@
 # README
+# 🍳 CookShare
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+**設計・テスト・保守性を重視した、レシピ共有SNSアプリ**
 
-Things you may want to cover:
+URL: [https://cookshare-ygta.onrender.com/](https://cookshare-ygta.onrender.com/)
 
-* Ruby version
+---
 
-* System dependencies
+## 📘 プロジェクト概要
 
-* Configuration
+**CookShare** は、ユーザーが自分のレシピを投稿・共有できるSNS型アプリです。  
+お気に入り・コメント・評価・フォローなどの機能を通じて、  
+ユーザー同士が料理を通じて交流できることを目指しています。
 
-* Database creation
+- **開発期間**：2025年8月〜10月（継続開発中）
+- **開発者**：溝内 慎吾
+- **目的**：  
+  Railsを用いたフルスタック開発を通じて、  
+  設計・テスト・保守を意識した堅実な開発スキルを身につけることを目標にしました。
 
-* Database initialization
+---
 
-* How to run the test suite
+## 🚀 URL情報
 
-* Services (job queues, cache servers, search engines, etc.)
+| 種類 | URL |
+|------|------|
+| **アプリURL** | https://cookshare-ygta.onrender.com/ |
+| **GitHubリポジトリ** | （ここにGitHubのURLを後で追加） |
 
-* Deployment instructions
+> ※テストアカウントを用意する場合はここに記載しておくと良いです  
+> 例：`test@example.com / password`
 
-* ...
+---
+
+## 🛠 使用技術
+
+| カテゴリ | 技術 |
+|-----------|------|
+| フレームワーク | Ruby on Rails 7.1 |
+| フロントエンド | Bootstrap 5 / Turbo |
+| データベース | PostgreSQL |
+| 認証 | Devise |
+| ストレージ | Active Storage（画像投稿） |
+| デプロイ | Render（無料プラン） |
+| テスト | RSpec / FactoryBot / Shoulda-Matchers |
+
+---
+
+## 🔧 機能一覧
+
+| 分類 | 機能 | 状況 |
+|------|------|------|
+| ユーザー | 登録・ログイン（Devise） | ✅ |
+| | プロフィール編集 | ✅ |
+| | フォロー / フォロワー機能 | ✅ |
+| レシピ | 投稿・編集・削除 | ✅ |
+| | 画像アップロード（ActiveStorage） | ✅ |
+| | 材料・手順の動的フォーム | ✅ |
+| | カテゴリ分類 / 検索 | ✅ |
+| インタラクション | お気に入り / コメント / 評価(★1〜5) | ✅ |
+| 管理機能 | 管理者ダッシュボード | ✅ |
+| | 通報管理（一般ユーザー・管理者） | ✅ |
+| | ユーザー / レシピ / コメント管理 | ✅ |
+| テスト | モデル / バリデーション / 一意制約テスト | ⏳進行中 |
+
+---
+
+## 💡 工夫・こだわりポイント
