@@ -56,3 +56,4 @@ end
 
 gem 'kaminari'
 gem 'kaminari-bootstrap'
+gem "aws-sdk-s3", "~> 1.114"
