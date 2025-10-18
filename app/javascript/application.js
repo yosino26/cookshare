@@ -16,6 +16,6 @@ import "bootstrap"
 // Custom JS
 // import "./recipe_form"
 
-import "./nested_fields"
+import "nested_fields"
 
 // ActiveStorageは最後に1回だけ起動

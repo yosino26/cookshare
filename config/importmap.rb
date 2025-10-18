@@ -9,3 +9,4 @@ pin "@rails/activestorage", to: "@rails--activestorage.js" # @8.0.201
 
 pin "@popperjs/core", to: "https://ga.jspm.io/npm:@popperjs/core@2.11.8/lib/index.js"
 pin "bootstrap",      to: "https://ga.jspm.io/npm:bootstrap@5.3.7/dist/js/bootstrap.esm.js"
+pin "nested_fields", to: "nested_fields.js"
