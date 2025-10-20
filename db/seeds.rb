@@ -1,155 +1,81 @@
-# 本番での誤投入防止（ALLOW_SEED=1 の時だけ許可）
-if Rails.env.production? && ENV["ALLOW_SEED"] != "1"
-  abort "SEED aborted: set ALLOW_SEED=1 to run in production."
+require "base64" 
+require "stringio"
+
+PROD = Rails.env.production?
+ALLOW = ENV["ALLOW_SEED"] == "1"  # 本番で実行する明示スイッチ
+SAFE_MODE = PROD || ENV.fetch("SEED_MODE", "safe") == "safe"  # 本番は常にsafe
+
+abort("[SEED STOPPED] production で ALLOW_SEED=1 が未設定") if PROD && !ALLOW
+puts "== SEED MODE: #{SAFE_MODE ? 'SAFE (non-destructive)' : 'RESET (destructive)'}"
+
+# ------- 破壊的処理は safe では封印（本番は常に封印） -------
+unless SAFE_MODE
+  # 依存順で消去（開発用のみ）
+  [Comment, Recipe, Category, User].each { |m| m.delete_all }
+  [Comment, Recipe, Category, User].each { |m| m.reset_pk_sequence! if m.respond_to?(:reset_pk_sequence!) }
+else
+  puts "== SAFE_MODE: delete_all/reset_pk はスキップ（非破壊）"
 end
 
-require "securerandom"
-require "stringio" 
-
-# ---- 可変パラメータ（ENVで上書き可能） ---------------------------
-USERS_COUNT              = (ENV["SEED_USERS"] || 5).to_i           # 総ユーザー数（含：admin/demo）
-RECIPES_PER_USER         = (ENV["SEED_RECIPES_PER_USER"] || 2).to_i
-COMMENTS_PER_RECIPE_MIN  = (ENV["SEED_COMMENTS_MIN"] || 1).to_i
-COMMENTS_PER_RECIPE_MAX  = (ENV["SEED_COMMENTS_MAX"] || 2).to_i
-WITH_IMAGES              = ENV["SEED_WITH_IMAGES"] == "1"          # 画像添付するなら1
-PASSWORD                 = ENV["SEED_PASSWORD"] || "password123"   # 全ユーザー共通の簡易パス
-CATEGORIES               = %w[和食 洋食 中華 スイーツ ごはんもの 麺類 サラダ スープ おつまみ]
-# ------------------------------------------------------------------
-
-puts "[SEED] start at #{Time.now}"
-
-# ---- テーブルの順序（FK順） ---------------------------------------
-models = []
-if defined?(Favorite)       then models << Favorite end
-if defined?(Follow)         then models << Follow   end
-if defined?(Rating)         then models << Rating   end
-if defined?(Comment)        then models << Comment  end
-if defined?(RecipeCategory) then models << RecipeCategory end
-if defined?(Recipe)         then models << Recipe   end
-if defined?(Category)       then models << Category end
-if defined?(User)           then models << User     end
-
-# ---- 全削除（高速化のため delete_all） ---------------------------
-ApplicationRecord.transaction do
-  models.each do |m|
-    m.delete_all
+# ------- ヘルパ -------
+def ensure_user!(email:, password:, admin: false)
+  User.find_or_create_by!(email: email) do |u|
+    u.password = password
+    u.admin = admin if User.column_names.include?("admin")
   end
 end
 
-# ---- Postgres の PK リセット --------------------------------------
-def reset_pk!(model)
-  return unless model.connection.adapter_name.downcase.include?("postgres")
-  table = model.table_name
-  pk    = model.primary_key
-  # Rails 7 PG で汎用的に動くやり方
-  model.connection.reset_pk_sequence!(table)
-rescue => e
-  warn "[SEED] PK reset skipped for #{table}: #{e.class} #{e.message}"
-end
-(models).each { |m| reset_pk!(m) }
-
-# ---- カテゴリ -----------------------------------------------------
-category_records = CATEGORIES.map { |name| { name: name, created_at: Time.now, updated_at: Time.now } }
-Category.insert_all!(category_records) if defined?(Category)
-categories = defined?(Category) ? Category.order(:id).to_a : []
-
-# ---- ユーザー（admin / demo を先に固定で作成） --------------------
-users = []
-
-if defined?(User)
-  admin = User.create!(
-    name:  "管理者",
-    email: "admin@example.com",
-    password: PASSWORD,
-    password_confirmation: PASSWORD,
-    admin: true,
-  )
-  users << admin
-
-  demo = User.create!(
-    name:  "デモ太郎",
-    email: "demo@example.com",
-    password: PASSWORD,
-    password_confirmation: PASSWORD
-  )
-  users << demo
-
-  # 残りの一般ユーザー
-  (USERS_COUNT - users.size).times do |i|
-    users << User.create!(
-      name:  "ユーザー#{i + 1}",
-      email: "user#{i + 1}@example.com",
-      password: PASSWORD,
-      password_confirmation: PASSWORD
-    )
+def ensure_categories!(names)
+  if Category.respond_to?(:upsert_all) && Category.connection.indexes(:categories).any? { _1.columns == ["name"] && _1.unique }
+    Category.upsert_all(names.map { |n| { name: n } }, unique_by: Category.connection.indexes(:categories).find { _1.columns == ["name"] && _1.unique }&.name)
+  else
+    names.each { |n| Category.find_or_create_by!(name: n) }
   end
 end
 
-# ---- レシピ & コメント --------------------------------------------
-recipes = []
-if defined?(Recipe)
-  users.each do |u|
-    RECIPES_PER_USER.times do |i|
-      text = "材料と手順のダイジェスト。デモ用の短い本文です。"
-  
-      attrs = {
-        user:   u,
-        title:  "#{u.name}のカンタンレシピ#{i + 1}",
-        hidden: false
-      }
-  
-      # スキーマにある項目だけ入れる
-      cols = Recipe.column_names
-      attrs[:body]          = text if cols.include?("body")
-      attrs[:description]   = text if cols.include?("description")
-      attrs[:cooking_time]  = (10..40).to_a.sample if cols.include?("cooking_time")
-      attrs[:servings]      = [1,2,3,4].sample      if cols.include?("servings")
-  
-      r = Recipe.create!(attrs)
+def assign_categories!(recipe, count: 2)
+  cats = Category.limit(count)
+  recipe.categories = (recipe.categories + cats).uniq if recipe.respond_to?(:categories=)
+end
 
-      # カテゴリ紐付け（あれば2件）
-      if defined?(RecipeCategory) && categories.any?
-        categories.sample(2).each do |c|
-          RecipeCategory.create!(recipe: r, category: c)
-        end
-      end
-
-      # 画像（任意）
-      if WITH_IMAGES && r.respond_to?(:images) && r.images.respond_to?(:attach)
-        # 1x1 PNGをその場で生成（ネットに出ないのでRenderでも安全）
-        png = StringIO.new(
-          ["89504E470D0A1A0A0000000D4948445200000001000000010802000000907753DE0000000A49444154789C6360000002000100FFFF03000006000557BF330000000049454E44AE426082"].pack("H*")
-        )
-        r.images.attach(io: png, filename: "placeholder.png", content_type: "image/png")
-      end
-
-      recipes << r
-    end
+def ensure_recipe!(user:, title:, attrs: {})
+  Recipe.find_or_create_by!(user: user, title: title) do |r|
+    attrs.each { |k, v| r[k] = v if Recipe.column_names.include?(k.to_s) }
   end
 end
 
-if defined?(Comment) && recipes.any?
-  recipes.each do |r|
-    rand(COMMENTS_PER_RECIPE_MIN..COMMENTS_PER_RECIPE_MAX).times do
-      cols = Comment.column_names
-      text = %w[おいしそう！ 作ってみます！ ナイスアイデア！ 家でもやってみたい].sample
+def ensure_comment!(user:, recipe:, body:)
+  # 本文カラム自動判定
+  col = (%w[body content text] & Comment.column_names).first
+  raise "No body-like column on comments" unless col
+  Comment.find_or_create_by!(user: user, recipe: recipe, col => body)
+end
 
-      attrs = { recipe: r, user: users.sample }
+def attach_tiny_image!(record, attachment_name: :images)
+  return unless ENV["SEED_WITH_IMAGES"] == "1"
+  return if record.respond_to?(attachment_name) && record.public_send(attachment_name).attached?
 
-      # コメント本文のカラム名を自動判定（手元のスキーマに合わせる）
-      if cols.include?("body")
-        attrs[:body] = text
-      elsif cols.include?("content")
-        attrs[:content] = text
-      elsif cols.include?("text")
-        attrs[:text] = text
-      else
-        raise "[SEED] Comment 本文カラムが見つかりません（body/content/text いずれも無し）"
-      end
-
-      Comment.create!(attrs)
-    end
+  png = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAA...") # 1x1 PNG
+  io = StringIO.new(png)
+  if record.respond_to?(attachment_name)
+    record.public_send(attachment_name).attach(io: io, filename: "tiny.png", content_type: "image/png")
+  elsif record.respond_to?(:image)
+    record.image.attach(io: io, filename: "tiny.png", content_type: "image/png")
   end
 end
-puts "[SEED] users=#{users.size} recipes=#{recipes.size} categories=#{categories.size} comments=#{defined?(Comment) ? Comment.count : 0}"
-puts "[SEED] done at #{Time.now}"
+
+# ------- ここから投入処理（冪等） -------
+ensure_categories!(%w[和食 洋食 中華 アジア エスニック])
+admin = ensure_user!(email: "admin@example.com", password: ENV.fetch("ADMIN_PASSWORD", "password123"), admin: true)
+demo  = ensure_user!(email: "demo@example.com",  password: ENV.fetch("DEMO_PASSWORD",  "password123"))
+
+r1 = ensure_recipe!(user: admin, title: "オムライス", attrs: { description: "たまごたっぷりの定番", servings: 2, cooking_time: 15 })
+assign_categories!(r1, count: 2); attach_tiny_image!(r1)
+
+r2 = ensure_recipe!(user: demo,  title: "味噌汁",     attrs: { description: "だし香る基本", servings: 2, cooking_time: 10 })
+assign_categories!(r2, count: 2); attach_tiny_image!(r2)
+
+ensure_comment!(user: demo,  recipe: r1, body: "簡単で助かりました！")
+ensure_comment!(user: admin, recipe: r2, body: "朝食にぴったりです。")
+
+puts "== Done: Users=#{User.count}, Recipes=#{Recipe.count}, Comments=#{Comment.count}, Categories=#{Category.count}"
