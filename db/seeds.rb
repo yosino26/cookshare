@@ -2,7 +2,7 @@ require "base64"
 require "stringio"
 
 PROD      = Rails.env.production?
-ALLOW     = ENV["ALLOW_SEED"] == "1"                     # 本番で実行する明示スイッチ
+ALLOW     = ENV["ALLOW_SEED"] == "1"                          # 本番で実行する明示スイッチ
 SAFE_MODE = PROD || ENV.fetch("SEED_MODE", "safe") == "safe"  # 本番は常に safe（非破壊）
 
 abort("[SEED STOPPED] production で ALLOW_SEED=1 が未設定") if PROD && !ALLOW
@@ -10,30 +10,45 @@ puts "== SEED MODE: #{SAFE_MODE ? 'SAFE (non-destructive)' : 'RESET (destructive
 puts "== PRODUCTION: destructive reset is disabled (forced SAFE)" if PROD
 
 # ===================== 破壊的処理（開発のみ & リセット時のみ） =====================
-# 本番では絶対に全削除を走らせない（FK違反防止・事故防止）
 if !PROD && !SAFE_MODE
   # 子 → 親 の順に削除（FK違反を避ける）
   candidates = %i[
     Ingredient Step Comment RecipeCategory Favorite Rating
     Recipe Category User
   ]
-
-  models = candidates.map { |name|
-    Object.const_defined?(name) ? Object.const_get(name) : nil
-  }.compact
-
+  models = candidates.map { |name| Object.const_defined?(name) ? Object.const_get(name) : nil }.compact
   models.each { |m| m.delete_all }
   models.each { |m| m.reset_pk_sequence! if m.respond_to?(:reset_pk_sequence!) }
 else
   puts "== SAFE_MODE: delete_all/reset_pk はスキップ（非破壊）"
 end
 
+# ===================== ユーティリティ =====================
+def assign_name_like_field!(record, value)
+  # name/username/display_name/full_name のどれかがあれば最初に見つかったものへ代入
+  candidates = %w[name username display_name full_name]
+  key = (candidates & record.class.column_names).first
+  return unless key
+  record[key] = value if record[key].blank?
+end
+
 # ===================== ヘルパ =====================
-def ensure_user!(email:, password:, admin: false)
-  User.find_or_create_by!(email: email) do |u|
+def ensure_user!(email:, password:, admin: false, label: nil)
+  u = User.find_or_initialize_by(email: email)
+  assign_name_like_field!(u, label || email.split("@").first.capitalize)
+
+  if u.new_record?
     u.password = password
     u.admin = admin if User.column_names.include?("admin")
+  else
+    # 既存ユーザーでも admin を付与したいケースに対応（必要なら）
+    if admin && User.column_names.include?("admin") && !u.admin?
+      u.admin = true
+    end
   end
+
+  u.save!  # name必須などのバリデーションに対応
+  u
 end
 
 def ensure_categories!(names)
@@ -79,7 +94,8 @@ def attach_tiny_image!(record, attachment_name: :images)
     return if record.image.respond_to?(:attached?) && record.image.attached?
   end
 
-  png = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADElEQVR42mP8z8AAAAMBAQF4GQ8tAAAAAElFTkSuQmCC") # 1x1 PNG
+  # 1x1 PNG
+  png = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADElEQVR42mP8z8AAAAMBAQF4GQ8tAAAAAElFTkSuQmCC")
   io  = StringIO.new(png)
 
   if record.respond_to?(attachment_name)
@@ -95,12 +111,14 @@ ensure_categories!(%w[和食 洋食 中華 アジア エスニック])
 admin = ensure_user!(
   email: "admin@example.com",
   password: ENV.fetch("ADMIN_PASSWORD", "password123"),
-  admin: true
+  admin: true,
+  label: "Admin"
 )
 
 demo = ensure_user!(
   email: "demo@example.com",
-  password: ENV.fetch("DEMO_PASSWORD", "password123")
+  password: ENV.fetch("DEMO_PASSWORD", "password123"),
+  label: "Demo"
 )
 
 r1 = ensure_recipe!(user: admin, title: "オムライス",
