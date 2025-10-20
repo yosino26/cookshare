@@ -30,7 +30,7 @@ def assign_name_like_field!(record, value)
   record[key] = value if key && record[key].blank?
 end
 
-# ===================== ヘルパ =====================
+# 既存/新規どちらでも安全に作成・昇格（冪等）
 def ensure_user!(email:, password:, admin: false, label: nil)
   u = User.find_or_initialize_by(email: email)
   assign_name_like_field!(u, label || email.split("@").first.capitalize)
@@ -39,9 +39,34 @@ def ensure_user!(email:, password:, admin: false, label: nil)
     u.password = password
     u.admin = admin if User.column_names.include?("admin")
   else
+    # 昇格は冪等に許可
     if admin && User.column_names.include?("admin") && !u.admin?
       u.admin = true
     end
+  end
+
+  u.save!
+  u
+end
+
+# 既存ユーザーを管理者に昇格＋（必要なら）パスワードを強制リセット
+def promote_user_to_admin!(email:, new_password: nil, label: nil)
+  u = User.find_by(email: email) || User.new(email: email)
+  assign_name_like_field!(u, label || email.split("@").first.capitalize)
+
+  if User.column_names.include?("admin") && !u.admin?
+    u.admin = true
+  end
+
+  # 既存ユーザーのパスワードは通常変更しない。
+  # ただし SEED_FORCE_PASSWORD_RESET=1 の場合のみ、new_password にリセット。
+  if ENV["SEED_FORCE_PASSWORD_RESET"] == "1" && new_password.present?
+    u.password = new_password
+  end
+
+  # 新規だった場合に備え、最低限のパスワードも設定
+  if u.new_record? && u.password.blank?
+    u.password = new_password.presence || "password123"
   end
 
   u.save!
@@ -101,20 +126,26 @@ end
 # ===================== データ投入 =====================
 ensure_categories!(%w[和食 洋食 中華 アジア エスニック])
 
-# ---- 管理者1名 ----
+# 既存の admin@example.com（管理者1）と一般3名の例（必要なら残す）
 admin = ensure_user!(
   email: "admin@example.com",
   password: "password123",
   admin: true,
   label: "Admin"
 )
-
-# ---- 一般ユーザー3名 ----
 user1 = ensure_user!(email: "user1@example.com", password: "userpass1", label: "User1")
 user2 = ensure_user!(email: "user2@example.com", password: "userpass2", label: "User2")
 user3 = ensure_user!(email: "user3@example.com", password: "userpass3", label: "User3")
 
-# ---- サンプルレシピ ----
+# ▼▼▼ 追加：既存ユーザーを管理者に昇格（必要ならパスワードを123456へ強制リセット） ▼▼▼
+promote_user_to_admin!(
+  email: "admin2@example.com",
+  new_password: "123456",   # ← パスワードをこの値にしたい場合は、SEED_FORCE_PASSWORD_RESET=1 を環境変数に設定
+  label: "Admin2"
+)
+# ▲▲▲ ここまで追加 ▲▲▲
+
+# サンプルレシピ
 r1 = ensure_recipe!(user: admin, title: "オムライス",
   attrs: { description: "たまごたっぷりの定番", servings: 2, cooking_time: 15 })
 assign_categories!(r1, count: 2)
@@ -135,7 +166,7 @@ r4 = ensure_recipe!(user: user3, title: "サラダ",
 assign_categories!(r4, count: 2)
 attach_tiny_image!(r4)
 
-# ---- コメント ----
+# コメント
 ensure_comment!(user: user1, recipe: r1, body: "簡単で助かりました！")
 ensure_comment!(user: admin, recipe: r2, body: "朝食にぴったりです。")
 ensure_comment!(user: user3, recipe: r3, body: "家族に好評でした。")
