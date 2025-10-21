@@ -85,3 +85,57 @@ URL: [https://cookshare-ygta.onrender.com/](https://cookshare-ygta.onrender.com/
   - Phase 34ではController・Systemテストも拡充予定。
 
 ---
+## 🧪 テスト・品質保証（Phase 34予定）
+
+- Model単体テスト  
+- Controller権限制御テスト  
+- Systemテスト（通報フロー / 管理画面操作）  
+- CSRF/XSS/SQL Injection対策確認  
+- パフォーマンス最適化（N+1 / Index確認）
+
+---
+
+## 🌱 今後の展望
+
+- コメント通報機能の追加（User / Recipeに加えて）  
+- SNS共有・印刷機能の追加  
+- ActiveStorage × S3連携による本番運用化  
+- アクセシビリティ対応・UI改善
+
+---
+
+## 👤 作者情報
+
+| 項目 | 内容 |
+|------|------|
+| **名前** | 溝内 慎吾 |
+| **学習歴** | 2024年10月〜現在（約1年） |
+| **使用環境** | Windows 11 + Ubuntu (WSL2) |
+| **目標** | 設計と品質を重視したWebアプリ開発ができるエンジニアを目指しています。 |
+
+---
+
+## 🗂 ディレクトリ構成（抜粋）
+app/
+├── controllers/
+│ ├── admin/ # 管理者画面
+│ ├── reports_controller.rb # 通報UI
+│ ├── recipes_controller.rb
+│ ├── comments_controller.rb
+│ ├── favorites_controller.rb
+│ └── follows_controller.rb
+├── models/
+│ ├── concerns/reportable.rb
+│ ├── report.rb
+│ ├── recipe.rb
+│ └── user.rb
+└── views/
+├── admin/
+├── reports/
+├── recipes/
+└── users/
+
+---
+
+このプロジェクトは個人ポートフォリオ目的で作成されています。  
+学習・面接資料としての利用を目的としています。
