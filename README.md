@@ -26,10 +26,10 @@ URL: [https://cookshare-ygta.onrender.com/](https://cookshare-ygta.onrender.com/
 | 種類 | URL |
 |------|------|
 | **アプリURL** | https://cookshare-ygta.onrender.com/ |
-| **GitHubリポジトリ** | （ここにGitHubのURLを後で追加） |
+| **GitHubリポジトリ** | https://github.com/yosino26?tab=repositories |
 
-> ※テストアカウントを用意する場合はここに記載しておくと良いです  
-> 例：`test@example.com / password`
+> ※テストアカウント  
+> ：user1@example.com / userpass1`
 
 ---
 
@@ -116,24 +116,30 @@ URL: [https://cookshare-ygta.onrender.com/](https://cookshare-ygta.onrender.com/
 ---
 
 ## 🗂 ディレクトリ構成（抜粋）
+
+```text
 app/
 ├── controllers/
-│ ├── admin/ # 管理者画面
-│ ├── reports_controller.rb # 通報UI
-│ ├── recipes_controller.rb
-│ ├── comments_controller.rb
-│ ├── favorites_controller.rb
-│ └── follows_controller.rb
+│   ├── admin/                 # 管理者画面
+│   ├── reports_controller.rb  # 通報UI
+│   ├── recipes_controller.rb
+│   ├── comments_controller.rb
+│   ├── favorites_controller.rb
+│   └── follows_controller.rb
 ├── models/
-│ ├── concerns/reportable.rb
-│ ├── report.rb
-│ ├── recipe.rb
-│ └── user.rb
+│   ├── concerns/
+│   │   └── reportable.rb
+│   ├── report.rb
+│   ├── recipe.rb
+│   └── user.rb
 └── views/
-├── admin/
-├── reports/
-├── recipes/
-└── users/
+    ├── admin/
+    ├── reports/
+    ├── recipes/
+    └── users/
+diff
+コードをコピーする
+
 
 ---
 
