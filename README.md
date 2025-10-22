@@ -29,7 +29,7 @@ URL: [https://cookshare-ygta.onrender.com/](https://cookshare-ygta.onrender.com/
 | **GitHubリポジトリ** | https://github.com/yosino26?tab=repositories |
 
 > ※テストアカウント  
-> ：user1@example.com / userpass1`
+> ：user1@example.com / userpass1
 
 ---
 
@@ -137,8 +137,6 @@ app/
     ├── reports/
     ├── recipes/
     └── users/
-diff
-コードをコピーする
 
 
 ---
