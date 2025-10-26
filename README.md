@@ -127,8 +127,7 @@ CookShareは、家庭料理を共有し、他のユーザーと交流できるSN
 ---
 
 ### 🏠 トップページ（レシピ一覧）
-![トップページ1](docs/screenshots/top_page_1.jpg)
-![トップページ2](docs/screenshots/top_page_2.jpg)
+![トップページ1](docs/screenshots/top_page.png)
 
 ログイン後、最新のレシピが一覧表示されます。  
 カード形式でレシピタイトル・投稿者・お気に入り数などが確認でき、  
@@ -137,7 +136,8 @@ CookShareは、家庭料理を共有し、他のユーザーと交流できるSN
 ---
 
 ### ✍️ レシピ投稿フォーム
-![レシピ投稿フォーム](docs/screenshots/recipe_form_gif.gif)
+![レシピ投稿フォーム1](docs/screenshots/recipe_form.png)
+![レシピ投稿フォーム2](docs/screenshots/recipe_form_gif.gif)
 
 「＋新しいレシピを投稿」から、タイトル・説明・画像を登録します。  
 材料・手順は動的フォームで自由に追加／削除でき、視覚的に分かりやすいUIを採用しています。  
@@ -146,8 +146,8 @@ CookShareは、家庭料理を共有し、他のユーザーと交流できるSN
 ---
 
 ### 🍲 レシピ詳細ページ
-![レシピ詳細1](docs/screenshots/recipe_detail_1.jpg)
-![レシピ詳細2](docs/screenshots/recipe_detail_2.jpg)
+![レシピ詳細1](docs/screenshots/recipe_detail_1.png)
+![レシピ詳細2](docs/screenshots/recipe_detail_2.png)
 
 投稿されたレシピの詳細情報を閲覧できます。  
 コメント投稿・お気に入り登録・評価（★1〜5）などの操作が可能で、  
@@ -158,14 +158,14 @@ CookShareは、家庭料理を共有し、他のユーザーと交流できるSN
 ### 🔍 検索・カテゴリ機能
 ![検索機能](docs/screenshots/search_page_gif.gif)
 
-カテゴリやキーワードでレシピを絞り込めます。  
-部分一致検索やカテゴリ選択によって目的のレシピをスムーズに探せます。  
+調理時間やキーワードでレシピを絞り込めます。  
+部分一致検索によって目的のレシピをスムーズに探せます。  
 非同期検索を導入し、ユーザー体験を向上させています。
 
 ---
 
 ### 👤 ユーザープロフィールページ
-![ユーザープロフィール](docs/screenshots/user_profile.jpg)
+![ユーザープロフィール](docs/screenshots/user_profile.png)
 
 各ユーザーのプロフィールを表示します。  
 フォロー／フォロワーリストを確認でき、気になるユーザーをフォローして交流が可能です。  
@@ -174,7 +174,7 @@ CookShareは、家庭料理を共有し、他のユーザーと交流できるSN
 ---
 
 ### 🛠️ 管理者ダッシュボード
-![管理者ダッシュボード](docs/screenshots/admin_dashboard.jpg)
+![管理者ダッシュボード](docs/screenshots/admin_dashboard.png)
 
 管理者ユーザーでログインするとアクセス可能な専用ダッシュボードです。  
 登録ユーザー・レシピ・コメント・通報などの管理を行えます。  
@@ -183,18 +183,11 @@ CookShareは、家庭料理を共有し、他のユーザーと交流できるSN
 ---
 
 ### 🚨 通報管理画面
-![通報管理画面](docs/screenshots/admin_reports.jpg)
+![通報管理画面](docs/screenshots/admin_reports.png)
 
 一般ユーザーから送信された通報内容を一覧で確認し、  
 「調査中」「解決済み」「却下」などのステータス管理が可能です。  
 通報対象（ユーザー／レシピ／コメント）に直接遷移して対応を行えます。
-
-
-
-
-
-
-
 
 
 ## 🧪 テスト・品質保証（Phase 34予定）
