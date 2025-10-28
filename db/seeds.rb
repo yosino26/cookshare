@@ -23,55 +23,43 @@ else
   puts "== SAFE_MODE: delete_all/reset_pk はスキップ（非破壊）"
 end
 
-# ===================== ユーティリティ =====================
-def assign_name_like_field!(record, value)
-  candidates = %w[name username display_name full_name]
-  key = (candidates & record.class.column_names).first
-  record[key] = value if key && record[key].blank?
-end
-
-# 既存/新規どちらでも安全に作成・昇格（冪等）
+# === 依存ユーティリティ（未定義なら定義） =========================================
 def ensure_user!(email:, password:, admin: false, label: nil)
   u = User.find_or_initialize_by(email: email)
-  assign_name_like_field!(u, label || email.split("@").first.capitalize)
-
+  # name系カラムの自動補完
+  name_key = (%w[name username display_name full_name] & User.column_names).first
+  u[name_key] = (label || email.split("@").first.capitalize) if name_key && u[name_key].blank?
   if u.new_record?
     u.password = password
     u.admin = admin if User.column_names.include?("admin")
   else
-    # 昇格は冪等に許可
-    if admin && User.column_names.include?("admin") && !u.admin?
-      u.admin = true
-    end
+    u.admin = true if admin && User.column_names.include?("admin") && !u.admin?
   end
-
   u.save!
   u
-end
+end unless defined?(ensure_user!)
 
-# 既存ユーザーを管理者に昇格＋（必要なら）パスワードを強制リセット
 def promote_user_to_admin!(email:, new_password: nil, label: nil)
   u = User.find_by(email: email) || User.new(email: email)
-  assign_name_like_field!(u, label || email.split("@").first.capitalize)
+  name_key = (%w[name username display_name full_name] & User.column_names).first
+  u[name_key] = (label || email.split("@").first.capitalize) if name_key && u[name_key].blank?
 
   if User.column_names.include?("admin") && !u.admin?
     u.admin = true
   end
-
-  # 既存ユーザーのパスワードは通常変更しない。
-  # ただし SEED_FORCE_PASSWORD_RESET=1 の場合のみ、new_password にリセット。
   if ENV["SEED_FORCE_PASSWORD_RESET"] == "1" && new_password.present?
     u.password = new_password
   end
-
-  # 新規だった場合に備え、最低限のパスワードも設定
   if u.new_record? && u.password.blank?
     u.password = new_password.presence || "password123"
   end
-
   u.save!
   u
-end
+end unless defined?(promote_user_to_admin!)
+
+def ensure_category!(name)
+  Category.find_or_create_by!(name: name)
+end unless defined?(ensure_category!)
 
 def ensure_categories!(names)
   if Category.respond_to?(:upsert_all)
@@ -82,30 +70,13 @@ def ensure_categories!(names)
     end
   end
   names.each { |n| Category.find_or_create_by!(name: n) }
-end
+end unless defined?(ensure_categories!)
 
-def assign_categories!(recipe, count: 2)
-  return unless recipe.respond_to?(:categories) && recipe.respond_to?(:categories=)
-  cats = Category.limit(count)
-  recipe.categories = (recipe.categories + cats).uniq
-end
+def attach_image_from_disk!(record, basename, dir: "db/seed_images", attachment_name: :images)
+  path = Rails.root.join(dir, basename)
+  raise "Image file not found: #{path}" unless File.exist?(path)
 
-def ensure_recipe!(user:, title:, attrs: {})
-  Recipe.find_or_create_by!(user: user, title: title) do |r|
-    attrs.each { |k, v| r[k] = v if Recipe.column_names.include?(k.to_s) }
-  end
-end
-
-def ensure_comment!(user:, recipe:, body:)
-  col = (%w[body content text] & Comment.column_names).first
-  raise "No body-like column on comments" unless col
-  attrs = { user: user, recipe: recipe, col => body }
-  Comment.find_or_create_by!(attrs)
-end
-
-def attach_tiny_image!(record, attachment_name: :images)
-  return unless ENV["SEED_WITH_IMAGES"] == "1"
-
+  # 既に添付されていれば冪等スキップ
   if record.respond_to?(attachment_name)
     assoc = record.public_send(attachment_name)
     return if assoc.respond_to?(:attached?) && assoc.attached?
@@ -113,17 +84,108 @@ def attach_tiny_image!(record, attachment_name: :images)
     return if record.image.respond_to?(:attached?) && record.image.attached?
   end
 
-  png = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADElEQVR42mP8z8AAAAMBAQF4GQ8tAAAAAElFTkSuQmCC")
-  io  = StringIO.new(png)
+  io = File.open(path, "rb")
+  content_type =
+    if defined?(Marcel)
+      # Pathname 不要。パス文字列でOK
+      Marcel::MimeType.for(path.to_s)
+    else
+      "image/jpeg"
+    end
 
   if record.respond_to?(attachment_name)
-    record.public_send(attachment_name).attach(io: io, filename: "tiny.png", content_type: "image/png")
-  elsif record.respond_to?(:image)
-    record.image.attach(io: io, filename: "tiny.png", content_type: "image/png")
+    record.public_send(attachment_name).attach(io: io, filename: File.basename(path), content_type: content_type)
+  elsif record.respond_to?(:image) # 単数添付のモデルにも対応
+    record.image.attach(io: io, filename: File.basename(path), content_type: content_type)
+  else
+    raise "No ActiveStorage attachment on #{record.class} (expected :#{attachment_name} or :image)"
   end
-end
+end unless defined?(attach_image_from_disk!)
 
-# ===================== データ投入 =====================
+# 可読小ヘルパー：配列の材料/手順を、存在する関連があれば作成（冪等）
+def add_ingredients!(recipe, items)
+  return unless defined?(Ingredient)
+  return unless recipe.respond_to?(:ingredients)
+
+  items.each do |name, qty|
+    # よくあるカラム: name, quantity
+    attrs = {}
+    attrs[:name] = name if Ingredient.column_names.include?("name")
+    attrs[:quantity] = qty if Ingredient.column_names.include?("quantity")
+    next if attrs.empty?
+
+    # 冪等: 同一name(+quantity)があるなら作らない
+    scope = recipe.ingredients
+    found = if attrs.key?(:quantity)
+      scope.find_by(name: attrs[:name], quantity: attrs[:quantity])
+    else
+      scope.find_by(name: attrs[:name])
+    end
+    scope.create!(attrs) unless found
+  end
+end unless defined?(add_ingredients!)
+
+def add_steps!(recipe, lines)
+  return unless defined?(Step)
+  return unless recipe.respond_to?(:steps)
+
+  # よくあるカラム: body/text/content/description, position
+  body_col = (%w[body text content description] & Step.column_names).first
+  pos_col  = (%w[position step_no order sort sort_order] & Step.column_names).first
+
+  lines.each_with_index do |line, idx|
+    attrs = {}
+    attrs[body_col.to_sym] = line if body_col
+    attrs[pos_col.to_sym]  = idx + 1 if pos_col
+    next if attrs.empty?
+
+    # 冪等: 同一本文(+position)が存在ならスキップ
+    scope = recipe.steps
+    found = if pos_col && body_col
+      scope.find_by(body_col => line, pos_col => idx + 1)
+    elsif body_col
+      scope.find_by(body_col => line)
+    else
+      nil
+    end
+    scope.create!(attrs) unless found
+  end
+end unless defined?(add_steps!)
+
+# 1レシピをまとめて投入
+def add_recipe_with_all!(user_email:, user_password:, title:, desc:, servings:, minutes:, category_name:, image_basename:, ingredients:, steps:)
+  # ユーザー確保
+  user = User.find_by(email: user_email) || ensure_user!(email: user_email, password: user_password, label: user_email.split("@").first.capitalize)
+
+  # レシピ作成（冪等に更新許可）
+  recipe = Recipe.find_or_initialize_by(user: user, title: title)
+  recipe.description  = desc if Recipe.column_names.include?("description")
+  recipe.servings     = servings if Recipe.column_names.include?("servings")
+  recipe.cooking_time = minutes if Recipe.column_names.include?("cooking_time")
+  recipe.save!
+
+  # 画像添付
+  begin
+    attach_image_from_disk!(recipe, image_basename)
+  rescue => e
+    warn "[SEED WARNING] 画像添付失敗 #{title}: #{e.message}"
+  end
+
+  # カテゴリ紐付け
+  cat = ensure_category!(category_name)
+  if recipe.respond_to?(:categories)
+    recipe.categories << cat unless recipe.categories.exists?(id: cat.id)
+  end
+
+  # 材料・手順（対応モデルがあれば）
+  add_ingredients!(recipe, ingredients)
+  add_steps!(recipe, steps)
+
+  puts "== Ensured Recipe: #{title} (#{user_email}) [#{category_name}]"
+  recipe
+end unless defined?(add_recipe_with_all!)
+
+# ===================== データ投入（ベース） =====================
 ensure_categories!(%w[和食 洋食 中華 アジア エスニック])
 
 # 既存の admin@example.com（管理者1）と一般3名の例（必要なら残す）
@@ -137,38 +199,134 @@ user1 = ensure_user!(email: "user1@example.com", password: "userpass1", label: "
 user2 = ensure_user!(email: "user2@example.com", password: "userpass2", label: "User2")
 user3 = ensure_user!(email: "user3@example.com", password: "userpass3", label: "User3")
 
-# ▼▼▼ 追加：既存ユーザーを管理者に昇格（必要ならパスワードを123456へ強制リセット） ▼▼▼
+# 既存ユーザー昇格の例（必要時のみ有効）
 promote_user_to_admin!(
   email: "admin2@example.com",
   new_password: "123456",   # ← パスワードをこの値にしたい場合は、SEED_FORCE_PASSWORD_RESET=1 を環境変数に設定
   label: "Admin2"
 )
-# ▲▲▲ ここまで追加 ▲▲▲
 
-# サンプルレシピ
-r1 = ensure_recipe!(user: admin, title: "オムライス",
-  attrs: { description: "たまごたっぷりの定番", servings: 2, cooking_time: 15 })
-assign_categories!(r1, count: 2)
-attach_tiny_image!(r1)
+# ---- レシピデータ定義 -------------------------------------------------------------
+recipes_payload = [
+  {
+    user_email:  "user1@example.com",
+    user_password: "userpass1",
+    title: "親子丼",
+    desc:  "甘辛つゆで煮た鶏と玉ねぎを卵でとじる定番丼。",
+    servings: 2,
+    minutes: 15,
+    category_name: "和食",
+    image_basename: "Oyakodon.jpg",
+    ingredients: [
+      ["鶏もも肉", "200g（ひと口大）"],
+      ["玉ねぎ", "1/2個（薄切り）"],
+      ["卵", "3個（溶く）"],
+      ["ごはん", "丼2杯分"],
+      ["だし", "150ml（または水＋顆粒だし小さじ1/2）"],
+      ["しょうゆ", "大さじ2"],
+      ["みりん", "大さじ2"],
+      ["酒", "大さじ1"],
+      ["砂糖", "小さじ1"],
+      ["三つ葉（あれば）", "適量"]
+    ],
+    steps: [
+      "玉ねぎは薄切り、鶏はひと口大、卵は溶く。",
+      "フライパンにだし・調味料を入れ中火。玉ねぎを2～3分煮る。",
+      "鶏肉を加え3～4分煮る。",
+      "溶き卵半量→ふた20～30秒→残りを加え好みの半熟で止める。",
+      "ごはんにのせ、三つ葉を散らす。"
+    ]
+  },
+  {
+    user_email:  "user1@example.com",
+    user_password: "userpass1",
+    title: "簡単食パンピザ",
+    desc:  "食パンに具をのせて焼くだけ。トースターで手軽。",
+    servings: 2,
+    minutes: 10,
+    category_name: "洋食",
+    image_basename: "TosutPiza.jpg",
+    ingredients: [
+      ["食パン（6枚切り）", "2枚"],
+      ["ピザ用チーズ", "60g"],
+      ["ケチャップ", "大さじ2"],
+      ["マヨネーズ（任意）", "小さじ1"],
+      ["ベーコン", "2枚（1cm角）"],
+      ["玉ねぎ", "1/4個（薄切り）"],
+      ["ピーマン", "1個（輪切り）"],
+      ["コーン（任意）", "大さじ2"],
+      ["乾燥バジル", "少々"],
+      ["黒こしょう", "少々"],
+      ["オリーブオイル", "少々"]
+    ],
+    steps: [
+      "トースターを予熱し、具材を切る。",
+      "ケチャップ＋マヨを食パンに塗る。",
+      "具→チーズの順にのせる。",
+      "4～6分、チーズが溶け色づくまで焼く。",
+      "仕上げを振り、食べやすく切る。"
+    ]
+  },
+  {
+    user_email:  "user2@example.com",
+    user_password: "userpass2",
+    title: "簡単お茶漬け",
+    desc:  "ごはんに熱いお茶やだしを注ぐだけ。夜食・〆に。",
+    servings: 1,
+    minutes: 5,
+    category_name: "和食",
+    image_basename: "Otyazuke_2.jpg",
+    ingredients: [
+      ["温かいごはん", "1膳"],
+      ["緑茶 または だし", "180ml（白だしなら熱湯180ml＋白だし大さじ1）"],
+      ["梅／鮭フレーク／刻み海苔／小ねぎ／白ごま／わさび／漬物 など", "適量"],
+      ["しょうゆ", "数滴（好みで）"]
+    ],
+    steps: [
+      "ごはんに好みの具をのせる。",
+      "緑茶を淹れるか、白だしを溶いた熱々のだしを用意。",
+      "縁から静かに注ぎ、しょうゆを数滴。",
+      "軽くほぐしていただく。"
+    ]
+  },
+  {
+    user_email:  "user2@example.com",
+    user_password: "userpass2",
+    title: "ハンバーグ",
+    desc:  "ふわっとジューシーな定番。フライパン1つ。",
+    servings: 2,
+    minutes: 25,
+    category_name: "洋食",
+    image_basename: "Hamburger_Steak.jpg",
+    ingredients: [
+      ["合いびき肉", "300g"],
+      ["玉ねぎ", "1/2個（みじん）"],
+      ["卵", "1個"],
+      ["パン粉", "大さじ4"],
+      ["牛乳", "大さじ3"],
+      ["塩", "小さじ1/3"],
+      ["こしょう", "少々"],
+      ["ナツメグ（あれば）", "少々"],
+      ["サラダ油", "小さじ2"],
+      ["ケチャップ", "大さじ2（ソース）"],
+      ["中濃ソース", "大さじ2（ソース）"],
+      ["みりん", "大さじ1（ソース）"],
+      ["水", "大さじ2（ソース）"]
+    ],
+    steps: [
+      "玉ねぎを600Wで1分30秒加熱し粗熱をとる。",
+      "パン粉＋牛乳を混ぜてふやかす。",
+      "肉に塩こしょう等を混ぜ粘り→卵・玉ねぎ・パン粉も混ぜる。",
+      "2等分し小判形に成形、中央をくぼませる。",
+      "中火2分焼き色→裏返し弱火でふた5～6分蒸し焼き（透明な肉汁でOK）。",
+      "取り出し、同フライパンでソース材料を1分煮詰める。かけて完成。"
+    ]
+  }
+]
 
-r2 = ensure_recipe!(user: user1, title: "味噌汁",
-  attrs: { description: "だし香る基本", servings: 2, cooking_time: 10 })
-assign_categories!(r2, count: 2)
-attach_tiny_image!(r2)
+# ---- 実投入 ----------------------------------------------------------------------
+recipes_payload.each do |r|
+  add_recipe_with_all!(**r)
+end
 
-r3 = ensure_recipe!(user: user2, title: "唐揚げ",
-  attrs: { description: "ジューシーで人気のおかず", servings: 3, cooking_time: 25 })
-assign_categories!(r3, count: 2)
-attach_tiny_image!(r3)
-
-r4 = ensure_recipe!(user: user3, title: "サラダ",
-  attrs: { description: "ヘルシーな副菜", servings: 2, cooking_time: 5 })
-assign_categories!(r4, count: 2)
-attach_tiny_image!(r4)
-
-# コメント
-ensure_comment!(user: user1, recipe: r1, body: "簡単で助かりました！")
-ensure_comment!(user: admin, recipe: r2, body: "朝食にぴったりです。")
-ensure_comment!(user: user3, recipe: r3, body: "家族に好評でした。")
-
-puts "== Done: Users=#{User.count}, Recipes=#{Recipe.count}, Comments=#{Comment.count}, Categories=#{Category.count}"
+puts "== Done(追加レシピ): #{recipes_payload.map { |h| h[:title] }.join(', ')}"
