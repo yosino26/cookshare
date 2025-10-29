@@ -50,13 +50,13 @@ URL: [https://cookshare-ygta.onrender.com/](https://cookshare-ygta.onrender.com/
 
 | カテゴリ | 技術 |
 |-----------|------|
-| フレームワーク | Ruby on Rails 7.1 |
-| フロントエンド | Bootstrap 5 / Turbo |
-| データベース | PostgreSQL |
-| 認証 | Devise |
-| ストレージ | Active Storage（画像投稿） |
-| デプロイ | Render（無料プラン） |
-| テスト | RSpec / FactoryBot / Shoulda-Matchers |
+| 言語/フレームワーク | Ruby **3.2.0** / Rails **7.1.5.1** |
+| フロントエンド | Bootstrap **5.3.5** / Turbo **2.0.16** / Stimulus **1.3.4** / Importmap-rails **2.2.2** |
+| データベース | PostgreSQL **14.18（psql client）** / pg **1.6.1** |
+| 認証 | Devise **4.9.4** |
+| ストレージ | Active Storage / aws-sdk-s3 **1.200.0** / image_processing **1.14.0** / mini_magick **5.3.0** |
+| デプロイ | Render |
+| その他 | RSpec Rails **7.1.1** / FactoryBot Rails **6.5.0** / Shoulda Matchers **5.3.0** / Faker **3.5.2** / Kaminari **1.2.2** / kaminari-bootstrap **3.0.1** / Puma **6.6.1** |
 
 ---
 
@@ -202,10 +202,17 @@ CookShareは、家庭料理を共有し、他のユーザーと交流できるSN
 
 ## 🌱 今後の展望
 
-- コメント通報機能の追加（User / Recipeに加えて）  
-- SNS共有・印刷機能の追加  
-- ActiveStorage × S3連携による本番運用化  
+- コメント通報機能の追加（User / Recipeに加えて Comment）
+- SNS共有・印刷機能の追加
+- Active Storage × S3 連携による本番運用化
 - アクセシビリティ対応・UI改善
+- React導入（段階的）
+  - Option A: React Islands（vite_ruby + react）— 検索・いいね一覧をReact化
+  - Option B: 部分SPA（マイページ/管理 + react-router-dom）
+  - Option C: 完全SPA（RailsをAPI化：jbuilder/jsonapi-serializer + OpenAPI）
+- 検索強化：pg_trgm + pg_search（部分一致/類似） or Meilisearch
+- タグ機能：acts-as-taggable-on（タグ×カテゴリの複合検索・関連提
+
 
 ---
 
@@ -244,7 +251,5 @@ app/
     └── users/
 
 
----
-
-このプロジェクトは個人ポートフォリオ目的で作成されています。  
+このプロジェクトは個人ポートフォリオ目的で作成されています。
 学習・面接資料としての利用を目的としています。
