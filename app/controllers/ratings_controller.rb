@@ -4,7 +4,6 @@ class RatingsController < ApplicationController
   def create
     @rating = @recipe.ratings.find_or_initialize_by(user: current_user)
     @rating.score = params[:score].to_i
-    
     if @rating.save
       redirect_to @recipe, notice: '評価を投稿しました'
     else
