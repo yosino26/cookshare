@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_10_06_132832) do
+ActiveRecord::Schema[7.1].define(version: 2025_11_02_223455) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -69,6 +69,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_06_132832) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["recipe_id"], name: "index_favorites_on_recipe_id"
+    t.index ["user_id", "recipe_id"], name: "idx_favorites_unique_user_recipe", unique: true
     t.index ["user_id", "recipe_id"], name: "index_favorites_on_user_id_and_recipe_id", unique: true
     t.index ["user_id"], name: "index_favorites_on_user_id"
   end
@@ -78,6 +79,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_06_132832) do
     t.bigint "following_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["follower_id", "following_id"], name: "idx_follows_unique_pair", unique: true
     t.index ["follower_id", "following_id"], name: "index_follows_on_follower_id_and_following_id", unique: true
     t.index ["follower_id"], name: "index_follows_on_follower_id"
     t.index ["following_id"], name: "index_follows_on_following_id"
@@ -102,6 +104,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_06_132832) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["recipe_id"], name: "index_ratings_on_recipe_id"
+    t.index ["user_id", "recipe_id"], name: "idx_ratings_unique_user_recipe", unique: true
     t.index ["user_id", "recipe_id"], name: "index_ratings_on_user_id_and_recipe_id", unique: true
     t.index ["user_id"], name: "index_ratings_on_user_id"
     t.check_constraint "score >= 1 AND score <= 5", name: "ratings_score_range"
@@ -113,6 +116,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_06_132832) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["category_id"], name: "index_recipe_categories_on_category_id"
+    t.index ["recipe_id", "category_id"], name: "idx_recipe_categories_unique", unique: true
     t.index ["recipe_id", "category_id"], name: "index_recipe_categories_on_recipe_id_and_category_id", unique: true
     t.index ["recipe_id"], name: "index_recipe_categories_on_recipe_id"
   end
@@ -199,8 +203,8 @@ ActiveRecord::Schema[7.1].define(version: 2025_10_06_132832) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "comments", "recipes"
-  add_foreign_key "comments", "users"
+  add_foreign_key "comments", "recipes", on_delete: :cascade
+  add_foreign_key "comments", "users", on_delete: :cascade
   add_foreign_key "favorites", "recipes"
   add_foreign_key "favorites", "users"
   add_foreign_key "follows", "users", column: "follower_id"
