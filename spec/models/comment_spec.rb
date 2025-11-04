@@ -14,4 +14,10 @@ RSpec.describe Comment, type: :model do
     create(:comment, recipe: recipe)
     expect { recipe.destroy }.to change { Comment.count }.by(-1)
   end
+  
+  it "前後空白は除去される" do
+    c = build(:comment, content: "  こんにちは  ")
+    c.validate
+    expect(c.content).to eq("こんにちは")
+  end
 end
