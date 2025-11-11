@@ -7,7 +7,15 @@ RSpec.describe "Recipe happy path", type: :system do
   let(:author) { create(:user) }
   let(:viewer) { create(:user) }
 
+  before do
+    Warden.test_mode!
+    driven_by(:selenium, using: :headless_chrome, screen_size: [1400, 900])
+  end
+
+  after { Warden.test_reset! }
+
   # ------- 小ヘルパ（UIゆれに強め） -------
+
   def submit_first_form!
     within("form", match: :first) do
       find('button[type="submit"], input[type="submit"]', match: :first, visible: :all).click
@@ -30,33 +38,27 @@ RSpec.describe "Recipe happy path", type: :system do
     fill_in "調理時間（分）", with: "10" if page.has_field?("調理時間（分）", wait: 1)
     fill_in "人数",           with: "2"  if page.has_field?("人数", wait: 1)
 
-    # 画像あれば添付（任意）
     if page.has_selector?("input[type='file']", wait: 1)
       up = first("input[type='file']", minimum: 1)
       attach_file up[:id], Rails.root.join("spec/fixtures/files/sample.jpg")
     end
 
-    # 材料/手順（動的フォーム想定）
     if page.has_field?("材料名", wait: 1)
       fill_in "材料名", with: "鶏もも肉"
-    else
-      if page.has_selector?('input[name*="[ingredients_attributes]"][name*="[name]"]', wait: 1)
-        fill_in first('input[name*="[ingredients_attributes]"][name*="[name]"]')[:id], with: "鶏もも肉"
-      end
+    elsif page.has_selector?('input[name*="[ingredients_attributes]"][name*="[name]"]', wait: 1)
+      fill_in first('input[name*="[ingredients_attributes]"][name*="[name]"]')[:id], with: "鶏もも肉"
     end
+
     if page.has_field?("分量", wait: 1)
       fill_in "分量", with: "150g"
-    else
-      if page.has_selector?('input[name*="[ingredients_attributes]"][name*="[amount]"]', wait: 1)
-        fill_in first('input[name*="[ingredients_attributes]"][name*="[amount]"]')[:id], with: "150g"
-      end
+    elsif page.has_selector?('input[name*="[ingredients_attributes]"][name*="[amount]"]', wait: 1)
+      fill_in first('input[name*="[ingredients_attributes]"][name*="[amount]"]')[:id], with: "150g"
     end
+
     if page.has_field?("手順 1", wait: 1)
       fill_in "手順 1", with: "鶏肉を煮て卵でとじる"
-    else
-      if page.has_selector?('textarea[name*="[steps_attributes]"]', wait: 1)
-        fill_in first('textarea[name*="[steps_attributes]"]')[:id], with: "鶏肉を煮て卵でとじる"
-      end
+    elsif page.has_selector?('textarea[name*="[steps_attributes]"]', wait: 1)
+      fill_in first('textarea[name*="[steps_attributes]"]')[:id], with: "鶏肉を煮て卵でとじる"
     end
   end
 
@@ -68,7 +70,7 @@ RSpec.describe "Recipe happy path", type: :system do
     expect(page).to have_content(text)
   end
 
-  # 詳細で“お気に入り”を押す → ダメなら一覧カードで押す
+  # 詳細で“お気に入り” → ダメなら一覧カードで押す
   def favorite!(recipe_id)
     favored = false
 
@@ -130,29 +132,31 @@ RSpec.describe "Recipe happy path", type: :system do
     end
   end
 
-  # `_rating_system.html.erb`：.rating-buttons 内の 1..5 のリンクが順に並ぶ → 最後＝5 を押す
+  # rating UI は「button_to」で生成されるフォームPOST
+  # → .rating-system .rating-buttons 配下の「title='5つ星'」ボタンを押す
   def rate_five_on_show!(recipe_id)
     scope = ".rating-system .rating-buttons"
     return false unless page.has_selector?(scope, wait: 3)
 
     within(scope) do
-      # 1) href に score=5 を含むリンク（最優先）
-      if has_selector?("a[href*='ratings'][href*='score=5']", wait: 1)
-        find("a[href*='ratings'][href*='score=5']", match: :first).click
+      # 1) title='5つ星' のボタン（button_to で付与済み）
+      if has_selector?("button[title='5つ星']", wait: 2)
+        find("button[title='5つ星']", match: :first).click
         return true
       end
 
-      # 2) data-turbo-method / data-method 付きで score=5
-      if has_selector?("a[data-turbo-method][href*='score=5'], a[data-method][href*='score=5']", wait: 1)
-        find("a[data-turbo-method][href*='score=5'], a[data-method][href*='score=5']", match: :first).click
-        return true
+      # 2) 念のため、score=5 を含む hidden input を持つ form の submit ボタンを押す
+      if has_selector?("form[action*='ratings']", wait: 1)
+        all("form[action*='ratings']").each do |f|
+          if f.has_selector?("input[type='hidden'][name='score'][value='5']", wait: 0.5)
+            f.find("button[type='submit'], input[type='submit']", match: :first).click
+            return true
+          end
+        end
       end
-
-      # 3) 最後のリンク（1..5 並び前提で＝5）
-      links = all("a", minimum: 1)
-      links.last.click
-      return true
     end
+
+    false
   rescue Capybara::ElementNotFound
     false
   end
@@ -186,11 +190,13 @@ RSpec.describe "Recipe happy path", type: :system do
     favorite!(recipe_id)
     expect_favorite_count_on_index(recipe_id, 1)
 
-    # 評価（5を押す）
+    # 一覧で数確認後、詳細に戻ってから評価する
+    visit recipe_show_path
+
     rated = rate_five_on_show!(recipe_id)
     unless rated
       save_page Rails.root.join("tmp/capybara/rating_debug.html")
-      raise "評価UIが見つかりません（.rating-buttons 内のリンクが検出できない）"
+      raise "評価UIが見つかりません（.rating-buttons 内のリンク/ボタンが検出できない）"
     end
 
     # 反映確認

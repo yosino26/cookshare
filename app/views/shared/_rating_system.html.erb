@@ -5,22 +5,24 @@
       (<%= recipe.average_rating %> / 5.0) <%= recipe.rating_count %>件の評価
     </span>
   </div>
-  
+
   <% if user_signed_in? && current_user != recipe.user %>
     <div class="user-rating">
       <% if current_user.rated?(recipe) %>
         <small class="text-muted">あなたの評価: </small>
         <span class="text-warning"><%= current_user.rating_for(recipe).stars %></span>
       <% end %>
-      
+
       <div class="rating-buttons mt-2">
         <small class="text-muted">このレシピを評価:</small><br>
+
         <% (1..5).each do |score| %>
-          <%= link_to recipe_ratings_path(recipe, score: score),
-                      method: :post,
-                      class: "btn btn-outline-warning btn-sm me-1",
-                      data: { turbo_method: :post },
-                      title: "#{score}つ星" do %>
+          <%= button_to recipe_ratings_path(recipe),
+                        params: { score: score },
+                        method: :post,
+                        class: "btn btn-outline-warning btn-sm me-1",
+                        form: { data: { turbo: true } }, # TurboでもOK
+                        title: "#{score}つ星" do %>
             <% if current_user.rated?(recipe) && current_user.rating_for(recipe).score >= score %>
               ★
             <% else %>
@@ -30,6 +32,7 @@
         <% end %>
       </div>
     </div>
+
   <% elsif user_signed_in? && current_user == recipe.user %>
     <small class="text-muted">自分のレシピには評価できません</small>
   <% else %>

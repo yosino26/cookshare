@@ -3,7 +3,9 @@ class RatingsController < ApplicationController
 
   def create
     @rating = @recipe.ratings.find_or_initialize_by(user: current_user)
-    @rating.score = params[:score].to_i
+    # ← ここで強制的に 1..5 に丸める
+    @rating.score = params[:score].to_i.clamp(1, 5)
+
     if @rating.save
       redirect_to @recipe, notice: '評価を投稿しました'
     else
