@@ -1,4 +1,3 @@
-# spec/system/recipe_happy_path_spec.rb
 require 'rails_helper'
 
 RSpec.describe "Recipe happy path", type: :system do
