@@ -33,8 +33,6 @@ class RecipesController < ApplicationController
   
    # ページネーション
    @recipes = @recipes.page(params[:page]).per(12)
-  # ページネーションは最後に一回
-   @recipes = @recipes.page(params[:page]).per(12)
    
    # 統計情報
    @total_recipes = Recipe.count

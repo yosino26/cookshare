@@ -33,6 +33,11 @@ class Recipe < ApplicationRecord
 
   # 並び順（タイブレーク付き）
   scope :recent, -> { order(created_at: :desc, id: :desc) }
+  scope :by_category, ->(category_id) {
+    joins(:recipe_categories)
+      .where(recipe_categories: { category_id: category_id })
+      .distinct
+  }
 
   scope :popular, -> {
     left_joins(:favorites)
