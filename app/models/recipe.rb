@@ -1,26 +1,21 @@
 class Recipe < ApplicationRecord
   include Reportable
 
-  # リレーション
   belongs_to :user
-  # お気に入り関連のリレーション
-  has_many :favorites, dependent: :destroy
-  #中間テーブルを経由して関連付け
-  has_many :favorited_by, through: :favorites, source: :user   
 
-  # 画像アップロード（Active Storage）
+  has_many :favorites, dependent: :destroy
+  has_many :favorited_by, through: :favorites, source: :user
+
   has_one_attached :image
 
-  # 関連
   has_many :ingredients, dependent: :destroy, inverse_of: :recipe
   has_many :steps,       dependent: :destroy,  inverse_of: :recipe
   has_many :comments, dependent: :destroy
-  has_many :ratings, dependent: :destroy   # ← これが必須
-  # 関連(カテゴリ機能)
+  has_many :ratings,  dependent: :destroy
+
   has_many :recipe_categories, dependent: :destroy
   has_many :categories, through: :recipe_categories
 
-  # ネスト属性
   accepts_nested_attributes_for :ingredients,
     allow_destroy: true,
     reject_if: ->(attrs) { attrs['name'].blank? && attrs['amount'].blank? }
@@ -29,101 +24,71 @@ class Recipe < ApplicationRecord
     allow_destroy: true,
     reject_if: ->(attrs) { attrs['instruction'].blank? }
 
-  # バリデーション
   validates :title,       presence: true, length: { maximum: 30 }
   validates :description, presence: true, length: { maximum: 1000 }
-  validates :cooking_time,
-             presence: true,
-             numericality: { greater_than: 0, less_than: 1000 }
-  validates :servings,
-             presence: true,
-             numericality: { greater_than: 0, less_than_or_equal_to: 20 }
+  validates :cooking_time, presence: true,
+            numericality: { greater_than: 0, less_than: 1000 }
+  validates :servings, presence: true,
+            numericality: { greater_than: 0, less_than_or_equal_to: 20 }
 
-  # スコープ
-  scope :recent, -> { order(created_at: :desc) }
-  scope :by_cooking_time, ->(time) { where('cooking_time <= ?', time.to_i) }
-  scope :visible, -> { where(hidden: false) }
-  scope :hidden,  -> { where(hidden: true)  }
-  scope :published, -> { where(hidden: false) }  # 非表示用のスコープ、または where.not(hidden: true)
-
-  # 検索用スコープ
-  scope :search_by_title_and_description, ->(keyword) {
-      where("title ILIKE ? OR description ILIKE ?", "%#{keyword}%", "%#{keyword}%")
+  # 並び順（タイブレーク付き）
+  scope :recent, -> { order(created_at: :desc, id: :desc) }
+  scope :by_category, ->(category_id) {
+    joins(:recipe_categories)
+      .where(recipe_categories: { category_id: category_id })
+      .distinct
   }
-  # 評価順のスコープ
-  scope :top_rated, -> { 
-    left_joins(:ratings)
-      .group(:id)
-      .order('AVG(ratings.score) DESC NULLS LAST')
-}
-  
-  # 表示用の並び
-  def ordered_ingredients
-    ingredients.order(:order_number)
-  end
 
-  def ordered_steps
-    steps.order(:step_number)
-  end
-
-  # （任意）Active Storageの型/サイズチェック
-  # validate :image_type_and_size
-  # def image_type_and_size
-  #   return unless image.attached?
-  #   unless image.content_type.in?(%w[image/png image/jpeg image/webp])
-  #     errors.add(:image, 'はPNG/JPEG/WEBPのみアップロードできます')
-  #   end
-  #   if image.byte_size > 5.megabytes
-  #     errors.add(:image, 'は5MB以下にしてください')
-  #   end
-  # end
-
-  # お気に入り数を取得
-  def favorite_count
-    favorites.count
-  end
-  # コメント数を取得
-  def comment_count
-    comments.count
-  end
-  # 評価数を取得
-  def rating_count
-    ratings.count
-  end
-  
-  # 人気順のスコープ（お気に入り数順）
-  scope :popular, -> { 
+  scope :popular, -> {
     left_joins(:favorites)
       .group(:id)
-      .order('COUNT(favorites.id) DESC')
+      .order(Arel.sql('COUNT(favorites.id) DESC'), id: :desc)
   }
 
-  # 評価関連
-  # 平均評価を計算
-  def average_rating
-    return 0 if ratings.empty?
-    ratings.average(:score).round(1)
+  scope :top_rated, -> {
+    left_joins(:ratings)
+      .group(:id)
+      .order(Arel.sql('COALESCE(AVG(ratings.score), 0) DESC'), id: :desc)
+  }
+
+  scope :by_cooking_time, ->(time) { where('cooking_time <= ?', time.to_i) }
+  scope :visible,   -> { where(hidden: false) }
+  scope :hidden,    -> { where(hidden: true)  }
+  scope :published, -> { where(hidden: false) }
+
+  scope :search_by_title_and_description, ->(keyword) {
+    where("title ILIKE ? OR description ILIKE ?", "%#{keyword}%", "%#{keyword}%")
+  }
+
+  def ordered_ingredients = ingredients.order(:order_number)
+  def ordered_steps       = steps.order(:step_number)
+
+  def favorite_count
+    association(:favorites).loaded? ? favorites.size : favorites.count
   end
-  # 星表示用
+
+  def comment_count
+    association(:comments).loaded? ? comments.size : comments.count
+  end
+
+  def rating_count
+    association(:ratings).loaded? ? ratings.size : ratings.count
+  end
+
+  def average_rating
+    ratings.average(:score).to_f.round(1)
+  end
+
   def rating_stars
     avg = average_rating
-    full_stars = avg.floor
-    half_star = (avg - full_stars) >= 0.5 ? 1 : 0
-    empty_stars = 5 - full_stars - half_star
-  
-    "★" * full_stars + "☆" * half_star + "☆" * empty_stars
-  end
-  # カテゴリ名の配列を取得
-  def category_names
-    categories.pluck(:name)
+    full = avg.floor
+    half = (avg - full) >= 0.5 ? 1 : 0
+    empty = 5 - full - half
+    "★" * full + "☆" * half + "☆" * empty
   end
 
-  # レポート機能関連
-  def safe_to_display?
-    pending_reports_count == 0
-  end
-  def requires_moderation?
-    pending_reports_count > 0
-  end
+  def category_names = categories.pluck(:name)
 
+  def safe_to_display?      = pending_reports_count == 0
+  def requires_moderation?  = pending_reports_count > 0
 end

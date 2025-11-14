@@ -1,4 +1,3 @@
-# config/routes.rb
 Rails.application.routes.draw do
   devise_for :users
 
@@ -61,5 +60,8 @@ Rails.application.routes.draw do
         patch :unhide             # => unhide_admin_comment_path(:id)
       end
     end
+  end
+  namespace :api do
+    resources :recipes, only: [:index]
   end
 end
