@@ -190,6 +190,58 @@ CookShareは、家庭料理を共有し、他のユーザーと交流できるSN
 通報対象（ユーザー／レシピ／コメント）に直接遷移して対応を行えます。
 
 
+## 🧪 テスト状況（実施済み・進行中）
+
+### ① モデルテスト（Model Specs）
+- Favorite：`user×recipe` 一意  
+  - `spec/models/favorite_spec.rb`
+- Follow：`follower×following` 一意／**自己フォロー禁止**（nilガード）  
+  - `spec/models/follow_spec.rb`
+- Rating：`score` は **1〜5**（境界：1/5 OK、0/6 NG）／`user×recipe` 一意  
+  - `spec/models/rating_spec.rb`
+- Comment：`content` 必須／**空白のみNG**／レシピ削除で巻き添え削除  
+  - `spec/models/comment_spec.rb`
+- RecipeCategory：`recipe×category` 一意  
+  - `spec/models/recipe_category_spec.rb`
+- Report：`enum` 値集合、`pending`（未対応のみ）／`recent`（**created_at desc, id desc**で安定）  
+  - `spec/models/report_spec.rb`
+
+### ② DBテスト（Constraints 実効性）
+- 一意インデックスの実効性を `insert_all!` で検証（`RecordNotUnique`）  
+  - 対象：favorites / follows / ratings / recipe_categories  
+  - `spec/db/constraints_spec.rb`
+- FK/依存削除の実効性（親 destroy 時に残骸なし）  
+  - `spec/models/comment_spec.rb` の差分検証
+
+### ③ スコープ・一覧表示（Request / API）
+- **recent順の安定**（`created_at desc, id desc`）  
+- **ページ跨ぎ重複なし**（1ページ=12件想定）  
+- **カテゴリ絞り込み**で該当のみ返る  
+  - `spec/requests/api/recipes_index_spec.rb`
+  - 利用スコープ：`Recipe.recent` / `Recipe.by_category` / `Recipe.published`  
+  - API：`GET /api/recipes`（`id,title,created_at` をJSON返却）
+
+### ④ アクセス制御（認可）／リクエスト層
+- 管理画面：admin のみ許可、一般は 302/403  
+  - `spec/requests/admin_access_spec.rb`
+- 所有権：他人レシピの編集/更新を拒否  
+  - `spec/requests/recipe_ownership_spec.rb`
+- 評価：**自分のレシピは評価不可**／`score` は **1..5 にクランプ**  
+  - `spec/requests/ratings_controller_spec.rb`  
+  - 実装補強：`RatingsController` に `authenticate_user!` / `reject_own_recipe!` / `clamp(1,5)`
+
+### ⑤ システムテスト（System / E2E）
+- ハッピーパス：**投稿 → 表示 → コメント → お気に入り → 評価**  
+  - `spec/system/recipe_happy_path_spec.rb`
+- マイページ：**投稿／お気に入り**のタブ切替表示  
+  - `spec/system/mypage_tabs_spec.rb`
+- 設定：Capybara（`rack_test` / `selenium headless` 切替）、画像フィクスチャ  
+  - `spec/support/capybara.rb` / `spec/fixtures/files/sample.jpg`
+
+### ⑥ CI（自動実行）
+- GitHub Actions で RSpec を自動実行（Chrome 追加で System Spec も走行）  
+  - `.github/workflows/rspec.yml`
+
 ## 🧪 テスト・品質保証（Phase 34予定）
 
 - Model単体テスト  
