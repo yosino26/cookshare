@@ -32,10 +32,12 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2.0'
-          bundler-cache: true
+          bundler-cache: true 
       - name: Setup DB
         run: |
-          bundle exec rails db:prepare
+          bundle exec rails db:create
+          bundle exec rails db:schema:load
+          
       - name: Run specs
         run: |
           bundle exec rspec --format documentation
