@@ -35,7 +35,7 @@ jobs:
           bundler-cache: true
       - name: Setup DB
         run: |
-          bin/rails db:create db:schema:load
+          bundle exec rails db:prepare
       - name: Run specs
         run: |
           bundle exec rspec --format documentation
