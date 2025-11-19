@@ -4,6 +4,17 @@ on:
   pull_request:
   push:
     branches: [ main ]
+  # 任意：特定のspec/ディレクトリだけを手動で回したいとき
+  workflow_dispatch:
+    inputs:
+      spec_path:
+        description: 'Spec file or directory to run (e.g. spec/requests/admin)'
+        required: false
+        default: ''
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -14,6 +25,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cookshare_test
         ports: ['5432:5432']
         options: >-
           --health-cmd="pg_isready -U postgres"
@@ -27,17 +39,31 @@ jobs:
       PGUSER: postgres
       PGPASSWORD: postgres
       DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/cookshare_test
+      DISABLE_SPRING: 1
     steps:
       - uses: actions/checkout@v4
+
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2.0'
-          bundler-cache: true 
+          bundler-cache: true
+
       - name: Setup DB
         run: |
           bundle exec rails db:create
           bundle exec rails db:schema:load
-          
-      - name: Run specs
-        run: |
-          bundle exec rspec --format documentation
+
+      # 手動起動時、指定のspecだけを実行（spec_path が空でない場合）
+      - name: Run selected specs (manual)
+        if: github.event_name == 'workflow_dispatch' && inputs.spec_path != ''
+        run: bundle exec rspec "${{ inputs.spec_path }}" --format documentation --backtrace
+
+      # フィーチャーブランチ/PR：速く落ちる設定（fail-fast, progress）
+      - name: Run specs (fast on branches/PR)
+        if: (github.ref != 'refs/heads/main') && !(github.event_name == 'workflow_dispatch' && inputs.spec_path != '')
+        run: bundle exec rspec --format progress --backtrace --fail-fast
+
+      # main：フル実行＆読みやすい出力
+      - name: Run specs (full on main)
+        if: (github.ref == 'refs/heads/main') && !(github.event_name == 'workflow_dispatch' && inputs.spec_path != '')
+        run: bundle exec rspec --format documentation --backtrace
