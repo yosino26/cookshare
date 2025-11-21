@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [ main ]
-  # 任意：特定のspec/ディレクトリだけを手動で回したいとき
+  # 任意：特定のspec/ディレクトリだけを手動で回したい時に使う
   workflow_dispatch:
     inputs:
       spec_path:
@@ -12,6 +12,7 @@ on:
         required: false
         default: ''
 
+# 連投Push時に古いジョブをキャンセル
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -40,6 +41,7 @@ jobs:
       PGPASSWORD: postgres
       DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/cookshare_test
       DISABLE_SPRING: 1
+
     steps:
       - uses: actions/checkout@v4
 
@@ -53,17 +55,83 @@ jobs:
           bundle exec rails db:create
           bundle exec rails db:schema:load
 
-      # 手動起動時、指定のspecだけを実行（spec_path が空でない場合）
+      # 変更された領域を検出（ここがキモ）
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            admin:
+              - 'app/controllers/admin/**'
+              - 'app/views/admin/**'
+              - 'spec/requests/admin/**'
+            favorites:
+              - 'app/controllers/**/favorites*'
+              - 'app/models/favorite.rb'
+              - 'spec/requests/favorites_spec.rb'
+            ratings:
+              - 'app/controllers/**/ratings*'
+              - 'app/models/rating.rb'
+              - 'spec/requests/ratings_spec.rb'
+            reports:
+              - 'app/controllers/**/reports*'
+              - 'app/models/report.rb'
+              - 'spec/requests/reports_spec.rb'
+            users:
+              - 'app/controllers/**/users*'
+              - 'app/models/user.rb'
+              - 'spec/requests/users_spec.rb'
+            recipes:
+              - 'app/controllers/**/recipes*'
+              - 'app/models/recipe.rb'
+              - 'spec/requests/recipes_spec.rb'
+
+      # 手動実行時：指定のspecだけを回す（spec_pathが入っている場合）
       - name: Run selected specs (manual)
         if: github.event_name == 'workflow_dispatch' && inputs.spec_path != ''
         run: bundle exec rspec "${{ inputs.spec_path }}" --format documentation --backtrace
 
-      # フィーチャーブランチ/PR：速く落ちる設定（fail-fast, progress）
-      - name: Run specs (fast on branches/PR)
-        if: (github.ref != 'refs/heads/main') && !(github.event_name == 'workflow_dispatch' && inputs.spec_path != '')
-        run: bundle exec rspec --format progress --backtrace --fail-fast
+      # PR/ブランチでは「触ったところだけ」を速く回す（fail-fast）
+      - name: Run filtered specs (PR/branches, fast)
+        if: (github.ref != 'refs/heads/main') && (github.event_name != 'workflow_dispatch')
+        run: |
+          ran=false
+          if [ "${{ steps.filter.outputs.admin }}" = "true" ]; then
+            echo "[paths-filter] admin 変更あり → spec/requests/admin を実行"
+            bundle exec rspec spec/requests/admin --format progress --fail-fast --backtrace || exit 1
+            ran=true
+          fi
+          if [ "${{ steps.filter.outputs.favorites }}" = "true" ]; then
+            echo "[paths-filter] favorites 変更あり → favorites_spec を実行"
+            bundle exec rspec spec/requests/favorites_spec.rb --format progress --fail-fast --backtrace || exit 1
+            ran=true
+          fi
+          if [ "${{ steps.filter.outputs.ratings }}" = "true" ]; then
+            echo "[paths-filter] ratings 変更あり → ratings_spec を実行"
+            bundle exec rspec spec/requests/ratings_spec.rb --format progress --fail-fast --backtrace || exit 1
+            ran=true
+          fi
+          if [ "${{ steps.filter.outputs.reports }}" = "true" ]; then
+            echo "[paths-filter] reports 変更あり → reports_spec を実行"
+            bundle exec rspec spec/requests/reports_spec.rb --format progress --fail-fast --backtrace || exit 1
+            ran=true
+          fi
+          if [ "${{ steps.filter.outputs.users }}" = "true" ]; then
+            echo "[paths-filter] users 変更あり → users_spec を実行"
+            bundle exec rspec spec/requests/users_spec.rb --format progress --fail-fast --backtrace || exit 1
+            ran=true
+          fi
+          if [ "${{ steps.filter.outputs.recipes }}" = "true" ]; then
+            echo "[paths-filter] recipes 変更あり → recipes_spec を実行"
+            bundle exec rspec spec/requests/recipes_spec.rb --format progress --fail-fast --backtrace || exit 1
+            ran=true
+          fi
+          # どれにも当たらない場合は requests 全体を軽く回す
+          if [ "$ran" = false ]; then
+            echo "[paths-filter] 該当なし → requests 全体を実行"
+            bundle exec rspec spec/requests --format progress --fail-fast --backtrace
+          fi
 
-      # main：フル実行＆読みやすい出力
+      # mainではフル実行（品質担保）
       - name: Run specs (full on main)
-        if: (github.ref == 'refs/heads/main') && !(github.event_name == 'workflow_dispatch' && inputs.spec_path != '')
-        run: bundle exec rspec --format documentation --backtrace
+        if: (github.ref == 'refs/heads/main') && (github.event_name != 'workflow_dispatch')
+        run: bundle exec rspec --format documentation --backtrac
