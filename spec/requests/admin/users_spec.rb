@@ -1,39 +1,18 @@
 require 'rails_helper'
 
-RSpec.describe "Admin::Users", type: :request do
-  describe "GET /index" do
-    it "returns http success" do
-      get "/admin/users/index"
-      expect(response).to have_http_status(:success)
+RSpec.describe "Users", type: :request do
+  let(:user) { create(:user) }
+
+  describe "GET /users/:id (show)" do
+    context "ログイン済みの場合" do
+      before do
+        sign_in user
+      end
+
+      it "returns http success" do
+        get user_path(user)
+        expect(response).to have_http_status(:success) # 200
+      end
     end
   end
-
-  describe "GET /show" do
-    it "returns http success" do
-      get "/admin/users/show"
-      expect(response).to have_http_status(:success)
-    end
-  end
-
-  describe "GET /edit" do
-    it "returns http success" do
-      get "/admin/users/edit"
-      expect(response).to have_http_status(:success)
-    end
-  end
-
-  describe "GET /update" do
-    it "returns http success" do
-      get "/admin/users/update"
-      expect(response).to have_http_status(:success)
-    end
-  end
-
-  describe "GET /toggle_admin" do
-    it "returns http success" do
-      get "/admin/users/toggle_admin"
-      expect(response).to have_http_status(:success)
-    end
-  end
-
 end
