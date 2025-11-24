@@ -11,6 +11,14 @@ RSpec.describe "Users", type: :request do
 
       it "returns http success" do
         get user_path(user)
+
+        # ====== ここでリダイレクト先を確認する ======
+        puts "==== DEBUG Users#show ===="
+        puts "status:   #{response.status}"
+        puts "location: #{response.location.inspect}"
+        puts "===================================="
+        # ========================================
+
         expect(response).to have_http_status(:success) # 200
       end
     end
