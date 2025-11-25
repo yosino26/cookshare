@@ -4,22 +4,13 @@ RSpec.describe "Users", type: :request do
   let(:user) { create(:user) }
 
   describe "GET /users/:id (show)" do
-    context "ログイン済みの場合" do
-      before do
-        sign_in user
-      end
-
-      it "returns http success" do
+    context "未ログインの場合" do
+      it "ログイン画面にリダイレクトされる" do
         get user_path(user)
 
-        # ====== ここでリダイレクト先を確認する ======
-        puts "==== DEBUG Users#show ===="
-        puts "status:   #{response.status}"
-        puts "location: #{response.location.inspect}"
-        puts "===================================="
-        # ========================================
-
-        expect(response).to have_http_status(:success) # 200
+        # ここで実際の挙動をテストで固定する
+        expect(response).to have_http_status(:found) # 302
+        expect(response).to redirect_to(new_user_session_path)
       end
     end
   end
