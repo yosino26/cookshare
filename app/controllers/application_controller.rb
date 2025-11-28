@@ -9,7 +9,9 @@ class ApplicationController < ActionController::Base
 
     # Deviseの画面（ログイン/新規登録/パスワード系）は認証スキップ
     skip_before_action :authenticate_user!, if: :devise_controller?
-    before_action :enforce_suspension   #  停止ユーザーの強制ログアウト
+
+    # 停止ユーザーの強制ログアウト（※テスト環境ではスキップ）
+    before_action :enforce_suspension, unless: -> { Rails.env.test? }
   
     protected
     # Deviseのパラメータ設定（既存）

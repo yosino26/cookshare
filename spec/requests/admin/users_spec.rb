@@ -1,39 +1,66 @@
 require 'rails_helper'
 
 RSpec.describe "Admin::Users", type: :request do
-  describe "GET /index" do
+  let(:admin) { create(:user, admin: true) } # 管理者ユーザー
+  let!(:user) { create(:user) }              # 対象ユーザー
+
+  before do
+    sign_in admin
+  end
+
+  # =========================
+  # GET /admin/users (index)
+  # =========================
+  describe "GET /admin/users (index)" do
     it "returns http success" do
-      get "/admin/users/index"
-      expect(response).to have_http_status(:success)
+      get admin_users_path
+      expect(response).to have_http_status(:success) # 200
     end
   end
 
-  describe "GET /show" do
+  # =========================
+  # GET /admin/users/:id (show)
+  # =========================
+  describe "GET /admin/users/:id (show)" do
     it "returns http success" do
-      get "/admin/users/show"
-      expect(response).to have_http_status(:success)
+      get admin_user_path(user)
+      expect(response).to have_http_status(:success) # 200
     end
   end
 
-  describe "GET /edit" do
+  # =========================
+  # GET /admin/users/:id/edit (edit)
+  # =========================
+  describe "GET /admin/users/:id/edit (edit)" do
     it "returns http success" do
-      get "/admin/users/edit"
-      expect(response).to have_http_status(:success)
+      get edit_admin_user_path(user)
+      expect(response).to have_http_status(:success) # 200
     end
   end
 
-  describe "GET /update" do
-    it "returns http success" do
-      get "/admin/users/update"
-      expect(response).to have_http_status(:success)
+  # =========================
+  # PATCH /admin/users/:id (update)
+  # =========================
+  describe "PATCH /admin/users/:id (update)" do
+    it "updates and redirects" do
+      patch admin_user_path(user), params: { user: { name: "AdminUpdated" } }
+
+      expect(response).to have_http_status(:found) # 302
+      expect(response).to redirect_to(admin_user_path(user))
     end
   end
 
-  describe "GET /toggle_admin" do
-    it "returns http success" do
-      get "/admin/users/toggle_admin"
-      expect(response).to have_http_status(:success)
+  # =========================
+  # PATCH /admin/users/:id/toggle_admin
+  # =========================
+  describe "PATCH /admin/users/:id/toggle_admin" do
+    it "toggles admin flag and redirects to show" do
+      expect {
+        patch toggle_admin_admin_user_path(user)
+      }.to change { user.reload.admin? }.from(false).to(true)
+
+      expect(response).to have_http_status(:found) # 302
+      expect(response).to redirect_to(admin_user_path(user))
     end
   end
-
 end
