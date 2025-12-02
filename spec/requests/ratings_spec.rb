@@ -4,27 +4,55 @@ RSpec.describe "Ratings", type: :request do
   let(:user)   { create(:user) }
   let(:recipe) { create(:recipe) }
 
-  before { sign_in user }
+  describe "POST /recipes/:recipe_id/ratings" do
+    context "ログイン済みのとき" do
+      before do
+        sign_in user
+      end
 
-  it "scoreが1〜5で作成できる" do
-    post recipe_ratings_path(recipe), params: { score: 5 }  # ← score直下で送る
-    expect(response).to have_http_status(:found)            # ← 302に合わせる
-    expect(Rating.where(user:, recipe:, score: 5)).to exist
-  end
+      it "レシピに評価を1件登録できること" do
+        expect {
+          post recipe_ratings_path(recipe), params: { score: 4 }
+        }.to change { recipe.ratings.count }.by(1)
 
-  it "不正scoreは302でリダイレクト（フラッシュに失敗文言）" do
-    post recipe_ratings_path(recipe), params: { score: 6 }
-    expect(response).to have_http_status(:found)            # ← 失敗時も302
-    # 失敗を挙動で担保：作成されていない
-    expect(Rating.where(user:, recipe:)).to be_empty
-    # フラッシュの確認（必要なら）
-    # follow_redirect! してから body に失敗メッセージを含むかをチェックしてもOK
-  end
+        rating = recipe.ratings.last
+        expect(rating.user).to  eq user
+        expect(rating.score).to eq 4
 
-  it "二重評価は302でリダイレクトし、件数は増えない" do
-    create(:rating, user:, recipe:, score: 3)
-    post recipe_ratings_path(recipe), params: { score: 4 }
-    expect(response).to have_http_status(:found)
-    expect(Rating.where(user:, recipe:).count).to eq(1)
+        expect(response).to have_http_status(:found) # 302
+        expect(response).to redirect_to(recipe_path(recipe))
+        expect(flash[:notice]).to eq '評価を投稿しました'
+      end
+
+      it "同じユーザーが再度評価するとスコアが上書きされること" do
+        create(:rating, recipe: recipe, user: user, score: 2)
+
+        expect {
+          post recipe_ratings_path(recipe), params: { score: 5 }
+        }.not_to change { recipe.ratings.count }
+
+        expect(recipe.ratings.find_by(user: user).score).to eq 5
+        expect(response).to redirect_to(recipe_path(recipe))
+      end
+
+      it "スコアは1〜5の範囲に丸められること" do
+        post recipe_ratings_path(recipe), params: { score: 100 }
+        expect(recipe.ratings.find_by(user: user).score).to eq 5
+
+        post recipe_ratings_path(recipe), params: { score: 0 }
+        expect(recipe.ratings.find_by(user: user).score).to eq 1
+      end
+    end
+
+    context "未ログインのとき" do
+      it "評価は作成されずログイン画面へリダイレクトされること" do
+        expect {
+          post recipe_ratings_path(recipe), params: { score: 4 }
+        }.not_to change { Rating.count }
+
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(new_user_session_path)
+      end
+    end
   end
 end
