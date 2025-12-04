@@ -1,5 +1,6 @@
 class RecipesController < ApplicationController
-  skip_before_action :authenticate_user!, only: [:index, :show]
+  # feed も Devise 認証をスキップして、アクション内の条件分岐で制御する
+  skip_before_action :authenticate_user!, only: [:index, :show, :feed]
   before_action :set_recipe, only: [:show, :edit, :update, :destroy]
   before_action :correct_user, only: [:edit, :update, :destroy]
 
@@ -7,48 +8,46 @@ class RecipesController < ApplicationController
     @recipes = Recipe.published
                      .includes(:user, image_attachment: :blob)
                      .recent
-                     
 
     # 検索機能
     if params[:search].present?
       @recipes = @recipes.search_by_title_and_description(params[:search])
     end
-    
+
     # 調理時間フィルター
     if params[:cooking_time].present?
       @recipes = @recipes.by_cooking_time(params[:cooking_time])
     end
-    
-   # ソート処理
-   @recipes = case params[:sort]
-              when 'popular'
-                @recipes.popular
-              when 'top_rated'
-                @recipes.top_rated
-              when 'cooking_time'
-                @recipes.order(:cooking_time)
-              else
-                @recipes.recent
-              end
-  
-   # ページネーション
-   @recipes = @recipes.page(params[:page]).per(12)
-   
-   # 統計情報
-   @total_recipes = Recipe.count
-   @total_users = User.count
-   @recent_recipes = Recipe.recent.limit(6)
+
+    # ソート処理
+    @recipes = case params[:sort]
+               when 'popular'
+                 @recipes.popular
+               when 'top_rated'
+                 @recipes.top_rated
+               when 'cooking_time'
+                 @recipes.order(:cooking_time)
+               else
+                 @recipes.recent
+               end
+
+    # ページネーション
+    @recipes = @recipes.page(params[:page]).per(12)
+
+    # 統計情報
+    @total_recipes  = Recipe.count
+    @total_users    = User.count
+    @recent_recipes = Recipe.recent.limit(6)
   end
 
   def show
     # @recipe は set_recipe 済み
     @user = @recipe.user
-  
+
     if @recipe.hidden? && !(user_signed_in? && (current_user.admin? || current_user.id == @recipe.user_id))
       raise ActiveRecord::RecordNotFound
     end
   end
-
 
   def new
     @recipe = current_user.recipes.build
@@ -58,7 +57,7 @@ class RecipesController < ApplicationController
 
   def create
     @recipe = current_user.recipes.build(recipe_params)
-    
+
     if @recipe.save
       redirect_to @recipe, notice: 'レシピが投稿されました！'
     else
@@ -100,13 +99,14 @@ class RecipesController < ApplicationController
   end
 
   private
+
   def set_recipe
     @recipe = Recipe.find(params[:id])
   end
 
   def recipe_params
     params.require(:recipe).permit(
-      :title, :description, :cooking_time, :servings, :image, 
+      :title, :description, :cooking_time, :servings, :image,
       category_ids: [],
       ingredients_attributes: [:id, :name, :amount, :order_number, :_destroy],
       steps_attributes:       [:id, :instruction, :step_number, :_destroy]
