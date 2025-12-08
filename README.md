@@ -190,80 +190,144 @@ CookShareは、家庭料理を共有し、他のユーザーと交流できるSN
 通報対象（ユーザー／レシピ／コメント）に直接遷移して対応を行えます。
 
 
-## 🧪 テスト状況（実施済み・進行中）
+## 🧪 テスト状況（実施済み）
 
 ### ① モデルテスト（Model Specs）
-- Favorite：`user×recipe` 一意  
+
+- Favorite：`user × recipe` 一意（重複お気に入り不可）  
   - `spec/models/favorite_spec.rb`
-- Follow：`follower×following` 一意／**自己フォロー禁止**（nilガード）  
+- Follow：`follower × following` 一意／**自己フォロー禁止**（nil ガード）  
   - `spec/models/follow_spec.rb`
-- Rating：`score` は **1〜5**（境界：1/5 OK、0/6 NG）／`user×recipe` 一意  
+- Rating：`score` は **1〜5**（境界 1/5 OK、0/6 NG）／`user × recipe` 一意  
   - `spec/models/rating_spec.rb`
-- Comment：`content` 必須／**空白のみNG**／レシピ削除で巻き添え削除  
+- Comment：`content` 必須／**空白のみ NG**／レシピ削除で巻き添え削除  
   - `spec/models/comment_spec.rb`
-- RecipeCategory：`recipe×category` 一意  
+- RecipeCategory：`recipe × category` 一意  
   - `spec/models/recipe_category_spec.rb`
-- Report：`enum` 値集合、`pending`（未対応のみ）／`recent`（**created_at desc, id desc**で安定）  
+- Report：`enum` 値集合／`pending`（未対応のみ）／`recent`（`created_at desc, id desc` で安定）  
   - `spec/models/report_spec.rb`
 
-### ② DBテスト（Constraints 実効性）
-- 一意インデックスの実効性を `insert_all!` で検証（`RecordNotUnique`）  
-  - 対象：favorites / follows / ratings / recipe_categories  
+### ② DB テスト（Constraints 実効性）
+
+**目的**: Rails のバリデーションをすり抜けても、DB 制約で必ず落ちることを確認
+
+- 一意インデックスの実効性を `insert_all!` で検証（`ActiveRecord::RecordNotUnique` 期待）  
+  - 対象：`favorites` / `follows` / `ratings` / `recipe_categories`  
   - `spec/db/constraints_spec.rb`
-- FK/依存削除の実効性（親 destroy 時に残骸なし）  
-  - `spec/models/comment_spec.rb` の差分検証
+- FK / 依存削除の実効性（親 `destroy` 時に残骸が残らないこと）  
+  - 例：`spec/models/comment_spec.rb` で差分検証
 
 ### ③ スコープ・一覧表示（Request / API）
-- **recent順の安定**（`created_at desc, id desc`）  
-- **ページ跨ぎ重複なし**（1ページ=12件想定）  
-- **カテゴリ絞り込み**で該当のみ返る  
+
+**目的**: 一覧の **並び順・絞り込み・ページネーション** を安定させる
+
+- API 一覧（`GET /api/recipes`）
+  - **recent 順の安定**（`created_at desc, id desc`）
+  - **ページ跨ぎ重複なし**（1ページ = 12 件想定）
+  - **カテゴリ絞り込み**で該当のみ返る
   - `spec/requests/api/recipes_index_spec.rb`
-  - 利用スコープ：`Recipe.recent` / `Recipe.by_category` / `Recipe.published`  
-  - API：`GET /api/recipes`（`id,title,created_at` をJSON返却）
+- 利用スコープ
+  - `Recipe.recent` / `Recipe.by_category` / `Recipe.published`
 
-### ④ アクセス制御（認可）／リクエスト層
-- 管理画面：admin のみ許可、一般は 302/403  
-  - `spec/requests/admin_access_spec.rb`
-- 所有権：他人レシピの編集/更新を拒否  
-  - `spec/requests/recipe_ownership_spec.rb`
-- 評価：**自分のレシピは評価不可**／`score` は **1..5 にクランプ**  
-  - `spec/requests/ratings_controller_spec.rb`  
-  - 実装補強：`RatingsController` に `authenticate_user!` / `reject_own_recipe!` / `clamp(1,5)`
+### ④ 公開側リクエストテスト（Request Specs）
 
-### ⑤ システムテスト（System / E2E）
+**目的**: 公開側機能の認証・権限・リダイレクト・フラッシュを HTTP レベルで保証
+
+- Favorites（お気に入り）  
+  - `POST /recipes/:recipe_id/favorite`：ログイン済みのみ 1 件追加  
+  - `DELETE /recipes/:recipe_id/favorite`：ログイン済みのみ 1 件削除  
+  - 未ログイン時は件数変化なし＋ログイン画面へリダイレクト  
+  - `spec/requests/favorites_spec.rb`
+- Ratings（評価）  
+  - `POST /recipes/:recipe_id/ratings`：1 ユーザー × 1 レシピで 1 件まで  
+  - 同じユーザーが再度評価 → レコード増やさず **score を上書き**  
+  - `score` は `1..5` に clamp されることを確認  
+  - 未ログイン時は Rating 追加なし＋ログイン画面へリダイレクト  
+  - `spec/requests/ratings_spec.rb`
+- Recipes（レシピ）  
+  - 一覧（`GET /recipes`）は誰でも 200 OK で閲覧可能  
+  - 作成（`POST /recipes`）  
+    - ログイン＋有効値 → 1 件作成＋詳細へ 302／notice  
+    - ログイン＋無効値 → 作成されず `render :new, status: :unprocessable_entity`  
+    - 未ログイン → 作成されずログイン画面へリダイレクト  
+  - 更新・削除（`PATCH/DELETE /recipes/:id`）  
+    - 投稿者本人のみ更新・削除可能  
+    - 他ユーザー／未ログイン → 変更されず一覧やログイン画面へリダイレクト  
+  - フィード（`GET /recipes/feed`）  
+    - ログイン済み → 200 OK  
+    - 未ログイン → 一覧に 302 リダイレクト＋ `flash[:alert] = 'ログインが必要です'`  
+  - `spec/requests/recipes_spec.rb`
+- Reports（通報）  
+  - フォーム表示（`GET /reports/recipes/:recipe_id/new`）  
+    - 未ログイン → ログイン画面へリダイレクト  
+    - ログイン＋他人のレシピ → 200 OK  
+    - ログイン＋自分のレシピ → 通報させず対象へ戻す＋`flash[:alert]`  
+    - すでに通報済み → フォームを出さず対象へ戻す＋`flash[:info]`  
+  - 通報作成（`POST /reports`）  
+    - 正常時：Report を 1 件作成し対象ページへ 302＋`flash[:success]`  
+    - 無効値：作成されず `render :new, status: :unprocessable_content`  
+    - 同じユーザーが同じ対象を再通報 → レコード増やさず対象へ戻す＋`flash[:alert]`  
+    - 未ログイン：Report 追加なし＋ログイン画面へリダイレクト  
+  - `spec/requests/reports_spec.rb`
+
+### ⑤ アクセス制御（認可）
+
+- 管理画面：admin のみ許可、一般ユーザーは 302/403 でブロック  
+  - 例：`spec/requests/admin_access_spec.rb`
+- レシピの所有権：他人レシピの編集/削除は拒否（コントローラの `correct_user` を検証）  
+  - 例：`spec/requests/recipe_ownership_spec.rb`
+
+### ⑥ システムテスト（System / E2E）
+
+**目的**: ブラウザ相当の操作で、主要なユーザーフローを保証
+
 - ハッピーパス：**投稿 → 表示 → コメント → お気に入り → 評価**  
   - `spec/system/recipe_happy_path_spec.rb`
 - マイページ：**投稿／お気に入り**のタブ切替表示  
   - `spec/system/mypage_tabs_spec.rb`
-- 設定：Capybara（`rack_test` / `selenium headless` 切替）、画像フィクスチャ  
-  - `spec/support/capybara.rb` / `spec/fixtures/files/sample.jpg`
+- 設定周り  
+  - Capybara（`rack_test` / `selenium headless` 切り替え）  
+  - 画像フィクスチャ：`spec/fixtures/files/sample.jpg`  
+  - `spec/support/capybara.rb`
 
-### ⑥ CI（自動実行）
-- GitHub Actions で RSpec を自動実行（Chrome 追加で System Spec も走行）  
+### ⑦ CI（自動実行）
+
+- GitHub Actions で RSpec を自動実行  
+  - PR：`dorny/paths-filter` により **変更のあった領域の spec のみ**を高速実行  
+  - main：`bundle exec rspec` で **全テスト**を実行して品質担保  
+  - System Spec 用に Chrome をセットアップ  
   - `.github/workflows/rspec.yml`
 
-## 🧪 テスト・品質保証（Phase 34予定）
+---
 
-- Model単体テスト  
-- Controller権限制御テスト  
-- Systemテスト（通報フロー / 管理画面操作）  
-- CSRF/XSS/SQL Injection対策確認  
-- パフォーマンス最適化（N+1 / Index確認）
+## 🧪 テスト・品質保証（今後強化したいポイント）
+
+- 管理画面・通報フローの System Spec 追加  
+  - 例：管理画面でのレポート対応（pending → investigating → resolved など）
+- 検索・複合フィルタ（カテゴリ × キーワード × 時間）の Request Spec 追加  
+- Active Storage の一貫性  
+  - レシピ削除時に添付画像が正しく削除されることの確認
+- セキュリティ周りの確認  
+  - CSRF / XSS / SQL Injection などの基本対策が機能しているかのチェック
+- パフォーマンス最適化  
+  - N+1 / インデックス有無の確認  
+  - 必要に応じて Bullet などの導入検討
 
 ---
 
 ## 🌱 今後の展望
 
-- コメント通報機能の追加（User / Recipeに加えて Comment）
-- SNS共有・印刷機能の追加
+- コメント通報機能の追加（User / Recipe に加えて Comment 対象を拡張）
+- SNS 共有・印刷機能の追加
 - Active Storage × S3 連携による本番運用化
-- アクセシビリティ対応・UI改善
-- React導入（段階的）
-  - Option A: React Islands（vite_ruby + react）— 検索・いいね一覧をReact化
-  - Option B: 部分SPA（マイページ/管理 + react-router-dom）
-  - Option C: 完全SPA（RailsをAPI化：jbuilder/jsonapi-serializer + OpenAPI）
-- 検索強化：pg_trgm + pg_search（部分一致/類似） or Meilisearch
-- タグ機能：acts-as-taggable-on（タグ×カテゴリの複合検索・関連提
+- アクセシビリティ対応・UI 改善
+- React 導入（段階的）
+  - Option A: React Islands（vite_ruby + React）— 検索・いいね一覧を React 化
+  - Option B: 部分 SPA（マイページ / 管理画面のみ react-router-dom で構成）
+  - Option C: 完全 SPA（Rails を API 化：jbuilder / jsonapi-serializer + OpenAPI）
+- 検索強化：pg_trgm + pg_search（部分一致／類似検索）や Meilisearch の検討
+- タグ機能：acts-as-taggable-on 等を用いたタグ × カテゴリの複合検索・関連レシピ表示
+
 
 
 ---
