@@ -1,0 +1,43 @@
+require 'rails_helper'
+
+RSpec.describe "Admin::Reports（管理画面の通報対応）", type: :request do
+  let(:admin) { create(:user, admin: true) }
+  let(:user)  { create(:user) }
+  let!(:report) { create(:report, status: :pending) }
+
+  describe "GET /admin/reports（通報一覧）" do
+    context "管理者ユーザーの場合" do
+      it "通報一覧ページを閲覧できる" do
+        sign_in admin
+
+        get admin_reports_path
+
+        expect(response).to have_http_status(:ok)
+        # 一覧にレポートが表示されていることをざっくり確認
+        expect(response.body).to include(report.id.to_s)
+      end
+    end
+
+    context "一般ユーザーの場合" do
+      it "管理画面の通報一覧にアクセスできず、トップへリダイレクトされる" do
+        sign_in user
+
+        get admin_reports_path
+
+        expect(response).to have_http_status(:redirect)
+        expect(response).to redirect_to(root_path) # 実装に合わせて変更OK
+      end
+    end
+
+    context "未ログインの場合" do
+      it "通報一覧にアクセスできず、ログイン画面へリダイレクトされる" do
+        get admin_reports_path
+
+        expect(response).to have_http_status(:redirect)
+        expect(response).to redirect_to(new_user_session_path)
+      end
+    end
+  end
+
+  
+end
