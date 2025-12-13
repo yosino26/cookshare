@@ -39,5 +39,46 @@ RSpec.describe "Admin::Reports（管理画面の通報対応）", type: :request
     end
   end
 
-  
+  describe "PATCH /admin/reports/:id/resolve（通報を対応済みにする）" do
+    context "管理者ユーザーの場合" do
+      it "通報のステータスを resolved に更新できる" do
+        sign_in admin
+
+        patch resolve_admin_report_path(report)
+
+        expect(response).to have_http_status(:redirect)
+        expect(response).to redirect_to(admin_report_path(report)) # 実装に合わせてOK
+
+        report.reload
+        expect(report.status).to eq("resolved")
+      end
+    end
+
+    context "一般ユーザーの場合" do
+      it "通報のステータスを変更できず、トップへリダイレクトされる" do
+        sign_in user
+
+        patch resolve_admin_report_path(report)
+
+        report.reload
+        # 一般ユーザーでは status が変わらない
+        expect(report.status).to eq("pending")
+
+        expect(response).to have_http_status(:redirect)
+        expect(response).to redirect_to(root_path)
+      end
+    end
+
+    context "未ログインの場合" do
+      it "通報のステータスを変更できず、ログイン画面へリダイレクトされる" do
+        patch resolve_admin_report_path(report)
+
+        report.reload
+        expect(report.status).to eq("pending")
+
+        expect(response).to have_http_status(:redirect)
+        expect(response).to redirect_to(new_user_session_path)
+      end
+    end
+  end
 end
