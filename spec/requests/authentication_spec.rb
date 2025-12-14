@@ -70,10 +70,17 @@ RSpec.describe "Authentication", type: :request do
 
       follow_redirect!
       expect(response).to have_http_status(:ok)
-
-      # flash メッセージを出している場合はここで確認しても良い
-      # 例：
-      # expect(response.body).to include("利用停止中のためログインできません")
     end
+  end
+  it "does not sign in with invalid password" do
+    post user_session_path, params: {
+      user: {
+        email: user.email,
+        password: "wrong-password"
+      }
+    }
+
+    expect(response).not_to redirect_to(root_path)
+    expect(response.body).to include("ログイン")
   end
 end
