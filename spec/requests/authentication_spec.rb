@@ -1,10 +1,10 @@
 require 'rails_helper'
 
-RSpec.describe "Authentication", type: :request do
+RSpec.describe "認証機能", type: :request do
   let(:user) { create(:user) }
 
-  describe "sign up" do
-    it "creates a user with valid params" do
+  describe "新規登録" do
+    it "有効なパラメータでユーザーを作成できる" do
       expect {
         post user_registration_path, params: {
           user: {
@@ -23,8 +23,8 @@ RSpec.describe "Authentication", type: :request do
     end
   end
 
-  describe "sign in and sign out" do
-    it "signs in and then signs out successfully" do
+  describe "ログインとログアウト" do
+    it "ログインしてログアウトできる" do
       # sign in
       post user_session_path, params: {
         user: {
@@ -52,8 +52,8 @@ RSpec.describe "Authentication", type: :request do
     end
   end
 
-  describe "suspended user" do
-    it "is forced to log out when accessing protected page" do
+  describe "停止ユーザー" do
+    it "停止ユーザーは保護ページにアクセスすると強制ログアウトされる" do
       # 通常ユーザーとしてログイン
       sign_in user
 
@@ -72,7 +72,7 @@ RSpec.describe "Authentication", type: :request do
       expect(response).to have_http_status(:ok)
     end
   end
-  it "does not sign in with invalid password" do
+  it "誤ったパスワードではログインできない" do
     post user_session_path, params: {
       user: {
         email: user.email,
