@@ -66,4 +66,40 @@ RSpec.describe "Recipes search and filter", type: :request do
       expect(response.body).not_to include(slow_recipe.title)
     end
   end
+
+  describe "検索キーワードと調理時間フィルターを併用した GET /recipes" do
+    let!(:match_both) do
+      create(:recipe,
+             title: "15分オムライス",
+             description: "オムライスの時短レシピ",
+             cooking_time: 15)
+    end
+
+    let!(:match_keyword_only) do
+      create(:recipe,
+             title: "じっくり煮込むオムライス",
+             description: "オムライスだけど時間がかかる",
+             cooking_time: 45)
+    end
+
+    let!(:match_time_only) do
+      create(:recipe,
+             title: "15分サンドイッチ",
+             description: "パンと野菜のシンプルな軽食",  # ← ここを変更
+             cooking_time: 15)
+    end
+
+    it "キーワード条件と調理時間条件の両方を満たすレシピだけを返す" do
+      get recipes_path, params: { search: "オムライス", cooking_time: 30 }
+
+      expect(response).to have_http_status(:ok)
+
+      # キーワード＆時間の両方を満たすレシピだけ含まれる
+      expect(response.body).to include(match_both.title)
+
+      # キーワードだけ or 時間だけ一致するレシピは含まれない
+      expect(response.body).not_to include(match_keyword_only.title)
+      expect(response.body).not_to include(match_time_only.title)
+    end
+  end
 end

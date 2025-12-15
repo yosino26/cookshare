@@ -7,19 +7,25 @@ class RecipesController < ApplicationController
   def index
     @recipes = Recipe.published
                      .includes(:user, image_attachment: :blob)
-                     .recent
 
-    # 検索機能
+    # 検索機能（タイトル・説明にキーワードを含む）
     if params[:search].present?
-      @recipes = @recipes.search_by_title_and_description(params[:search])
+      keyword = "%#{params[:search]}%"
+      @recipes = @recipes.where(
+        "recipes.title LIKE :keyword OR recipes.description LIKE :keyword",
+        keyword: keyword
+      )
     end
 
-    # 調理時間フィルター
+    # 調理時間フィルター（指定時間以下）
     if params[:cooking_time].present?
-      @recipes = @recipes.by_cooking_time(params[:cooking_time])
+      @recipes = @recipes.where(
+        "recipes.cooking_time <= ?",
+        params[:cooking_time].to_i
+      )
     end
 
-    # ソート処理
+    # 並び順（デフォルトは recent）
     @recipes = case params[:sort]
                when 'popular'
                  @recipes.popular
