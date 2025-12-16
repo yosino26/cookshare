@@ -1,7 +1,7 @@
 require 'rails_helper'
 
-RSpec.describe "Recipes search and filter", type: :request do
-  describe "GET /recipes with search keyword" do
+RSpec.describe "レシピ検索と絞り込み", type: :request do
+  describe "検索キーワード付きの GET /recipes" do
     let!(:matching_title) do
       create(:recipe,
              title: "簡単オムライス",
@@ -20,7 +20,7 @@ RSpec.describe "Recipes search and filter", type: :request do
              description: "スパイスたっぷりの本格カレー")
     end
 
-    it "returns only recipes whose title or description includes the keyword" do
+    it "タイトルまたは説明文にキーワードを含むレシピだけを返す" do
       get recipes_path, params: { search: "オムライス" }
 
       expect(response).to have_http_status(:ok)
@@ -34,7 +34,7 @@ RSpec.describe "Recipes search and filter", type: :request do
     end
   end
 
-  describe "GET /recipes with cooking_time filter" do
+  describe "調理時間フィルター付きの GET /recipes" do
     let!(:quick_recipe) do
       create(:recipe,
              title: "10分パスタ",
@@ -53,7 +53,7 @@ RSpec.describe "Recipes search and filter", type: :request do
              cooking_time: 45)
     end
 
-    it "returns only recipes whose cooking_time is less than or equal to the specified value" do
+    it "指定した調理時間以下のレシピだけを返す" do
       get recipes_path, params: { cooking_time: 30 }
 
       expect(response).to have_http_status(:ok)
