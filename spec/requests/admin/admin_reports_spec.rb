@@ -81,4 +81,40 @@ RSpec.describe "Admin::Reports（管理画面の通報対応）", type: :request
       end
     end
   end
+
+  describe "GET /admin/reports/:id（通報詳細）" do
+    context "管理者ユーザーの場合" do
+      it "通報の詳細ページを閲覧できる" do
+        sign_in admin
+
+        get admin_report_path(report)
+
+        expect(response).to have_http_status(:ok)
+        # 通報IDやステータスなど、通報詳細が表示されていることをざっくり確認
+        expect(response.body).to include(report.id.to_s)
+        expect(response.body).to include("レポート詳細") # ページヘッダー
+        expect(response.body).to include("未対応")       # pending の表示ラベル
+      end
+    end
+
+    context "一般ユーザーの場合" do
+      it "通報詳細にアクセスできず、トップへリダイレクトされる" do
+        sign_in user
+
+        get admin_report_path(report)
+
+        expect(response).to have_http_status(:redirect)
+        expect(response).to redirect_to(root_path)
+      end
+    end
+
+    context "未ログインの場合" do
+      it "通報詳細にアクセスできず、ログイン画面へリダイレクトされる" do
+        get admin_report_path(report)
+
+        expect(response).to have_http_status(:redirect)
+        expect(response).to redirect_to(new_user_session_path)
+      end
+    end
+  end
 end
