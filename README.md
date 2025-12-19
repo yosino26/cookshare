@@ -221,29 +221,43 @@ CookShareは、家庭料理を共有し、他のユーザーと交流できるSN
 
 **目的**: 一覧の **並び順・絞り込み・ページネーション** を安定させる
 
-- API 一覧（`GET /api/recipes`）
-  - **recent 順の安定**（`created_at desc, id desc`）
-  - **ページ跨ぎ重複なし**（1ページ = 12 件想定）
-  - **カテゴリ絞り込み**で該当のみ返る
+- API 一覧（`GET /api/recipes`）  
+  - **recent 順の安定**（`created_at desc, id desc`）  
+  - **ページ跨ぎ重複なし**（1ページ = 12 件想定）  
+  - **カテゴリ絞り込み**で該当のみ返る  
   - `spec/requests/api/recipes_index_spec.rb`
-- 利用スコープ
+- 公開側一覧（`GET /recipes` の検索・絞り込み）  
+  - キーワード検索：タイトル or 説明文にキーワードを含むレシピのみ返す  
+  - 調理時間フィルタ：指定時間以下のレシピのみ返す  
+  - キーワード＋調理時間の併用：両方の条件を満たすレシピだけ返す  
+  - `spec/requests/recipes_search_spec.rb`
+- 利用スコープ  
   - `Recipe.recent` / `Recipe.by_category` / `Recipe.published`
 
 ### ④ 公開側リクエストテスト（Request Specs）
 
 **目的**: 公開側機能の認証・権限・リダイレクト・フラッシュを HTTP レベルで保証
 
+- Authentication（認証）  
+  - 新規登録（`POST /users`）で有効なパラメータの場合のみ User が 1 件増える  
+  - 正しいメール＋パスワードでログイン → トップにリダイレクト → ログアウトまでの一連のハッピーパス  
+  - 誤ったパスワードではログインできず、ログイン画面が再表示される  
+  - 停止ユーザー（`suspended: true`）が認証必須ページにアクセスすると、ログイン画面に強制送還される（`ApplicationController#enforce_suspension` の動作確認）  
+  - `spec/requests/authentication_spec.rb`
+
 - Favorites（お気に入り）  
   - `POST /recipes/:recipe_id/favorite`：ログイン済みのみ 1 件追加  
   - `DELETE /recipes/:recipe_id/favorite`：ログイン済みのみ 1 件削除  
   - 未ログイン時は件数変化なし＋ログイン画面へリダイレクト  
   - `spec/requests/favorites_spec.rb`
+
 - Ratings（評価）  
   - `POST /recipes/:recipe_id/ratings`：1 ユーザー × 1 レシピで 1 件まで  
   - 同じユーザーが再度評価 → レコード増やさず **score を上書き**  
   - `score` は `1..5` に clamp されることを確認  
   - 未ログイン時は Rating 追加なし＋ログイン画面へリダイレクト  
   - `spec/requests/ratings_spec.rb`
+
 - Recipes（レシピ）  
   - 一覧（`GET /recipes`）は誰でも 200 OK で閲覧可能  
   - 作成（`POST /recipes`）  
@@ -257,6 +271,7 @@ CookShareは、家庭料理を共有し、他のユーザーと交流できるSN
     - ログイン済み → 200 OK  
     - 未ログイン → 一覧に 302 リダイレクト＋ `flash[:alert] = 'ログインが必要です'`  
   - `spec/requests/recipes_spec.rb`
+
 - Reports（通報）  
   - フォーム表示（`GET /reports/recipes/:recipe_id/new`）  
     - 未ログイン → ログイン画面へリダイレクト  
@@ -272,9 +287,26 @@ CookShareは、家庭料理を共有し、他のユーザーと交流できるSN
 
 ### ⑤ アクセス制御（認可）
 
-- 管理画面：admin のみ許可、一般ユーザーは 302/403 でブロック  
-  - 例：`spec/requests/admin_access_spec.rb`
-- レシピの所有権：他人レシピの編集/削除は拒否（コントローラの `correct_user` を検証）  
+- 管理画面 全体保護  
+  - `/admin` 配下へのアクセスは admin ユーザーのみ許可  
+  - 一般ユーザーはトップへリダイレクト／未ログインはログイン画面へリダイレクト  
+  - 例：`spec/requests/admin_access_spec.rb`, `spec/requests/admin/routes_protection_shared_examples.rb` など
+
+- 管理画面：通報管理  
+  - 通報一覧（`GET /admin/reports`）  
+    - 管理者：一覧を閲覧できる（pending レポートが表示される）  
+    - 一般ユーザー：トップへリダイレクト  
+    - 未ログイン：ログイン画面へリダイレクト  
+  - 通報詳細（`GET /admin/reports/:id`）  
+    - 管理者：詳細ページを閲覧でき、「レポート詳細」「未対応」などの表示を確認  
+    - 一般ユーザー／未ログイン：アクセスできず、それぞれトップ／ログイン画面へリダイレクト  
+  - 通報の対応（`PATCH /admin/reports/:id/resolve`）  
+    - 管理者：status が `resolved` に更新され、詳細ページへリダイレクト  
+    - 一般ユーザー／未ログイン：status は変わらず、トップ／ログイン画面へリダイレクト  
+  - `spec/requests/admin/admin_reports_spec.rb`
+
+- レシピの所有権  
+  - 他人レシピの編集/削除は拒否（コントローラの `correct_user` を検証）  
   - 例：`spec/requests/recipe_ownership_spec.rb`
 
 ### ⑥ システムテスト（System / E2E）
@@ -302,9 +334,10 @@ CookShareは、家庭料理を共有し、他のユーザーと交流できるSN
 
 ## 🧪 テスト・品質保証（今後強化したいポイント）
 
-- 管理画面・通報フローの System Spec 追加  
-  - 例：管理画面でのレポート対応（pending → investigating → resolved など）
-- 検索・複合フィルタ（カテゴリ × キーワード × 時間）の Request Spec 追加  
+- 管理画面・通報フローの **System Spec** 追加  
+  - 例：admin ログイン → レポート一覧 → 詳細 → ステータス変更（pending → investigating → resolved）までをブラウザ操作で確認
+- 検索・複合フィルタの拡張  
+  - カテゴリ × キーワード × 調理時間 など、複合条件の Request Spec 追加
 - Active Storage の一貫性  
   - レシピ削除時に添付画像が正しく削除されることの確認
 - セキュリティ周りの確認  
