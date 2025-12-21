@@ -60,6 +60,10 @@ jobs:
         id: filter
         with:
           filters: |
+            system:
+              - 'spec/system/**'
+              - 'spec/support/capybara.rb'
+              - 'spec/support/**'
             admin:
               - 'app/controllers/admin/**'
               - 'app/views/admin/**'
@@ -95,6 +99,12 @@ jobs:
         if: (github.ref != 'refs/heads/main') && (github.event_name != 'workflow_dispatch')
         run: |
           ran=false
+
+          if [ "${{ steps.filter.outputs.system }}" = "true" ]; then
+            echo "[paths-filter] system 変更あり → spec/system を実行"
+            bundle exec rspec spec/system --format progress --fail-fast --backtrace || exit 1
+            ran=true
+          fi
           if [ "${{ steps.filter.outputs.admin }}" = "true" ]; then
             echo "[paths-filter] admin 変更あり → spec/requests/admin を実行"
             bundle exec rspec spec/requests/admin --format progress --fail-fast --backtrace || exit 1
@@ -134,4 +144,4 @@ jobs:
       # mainではフル実行（品質担保）
       - name: Run specs (full on main)
         if: (github.ref == 'refs/heads/main') && (github.event_name != 'workflow_dispatch')
-        run: bundle exec rspec --format documentation --backtrac
+        run: bundle exec rspec --format documentation --backtrace
