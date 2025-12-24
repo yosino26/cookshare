@@ -85,4 +85,23 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     report.reload
     expect(report).to be_resolved
   end
+
+  it "一般ユーザーは管理画面（レポート一覧）にアクセスできない" do
+    user = create(:user) # admin じゃない
+
+    visit new_user_session_path
+    fill_in "user_email", with: user.email
+    fill_in "user_password", with: "password"
+    click_button "ログイン"
+
+    visit admin_reports_path
+
+    # 期待：管理画面に入れず、トップに戻される（実装に合わせて調整）
+    expect(page).not_to have_content("レポート管理")
+    expect(page).to have_current_path(root_path, ignore_query: true)
+
+    # 余裕があれば：フラッシュ文言（ある場合のみ）
+    # expect(page).to have_content("権限がありません")
+  end
+  
 end
