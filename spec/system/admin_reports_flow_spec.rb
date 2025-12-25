@@ -103,5 +103,9 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     # 余裕があれば：フラッシュ文言（ある場合のみ）
     # expect(page).to have_content("権限がありません")
   end
-  
+  it "未ログインユーザーは管理画面（レポート一覧）にアクセスできない" do
+    visit admin_reports_path
+    expect(page).to have_current_path(new_user_session_path, ignore_query: true)
+  end
+
 end
