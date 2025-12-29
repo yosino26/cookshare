@@ -21,17 +21,19 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     fill_in "user_password", with: "password"
     click_button "ログイン"
 
-     # 詳細ページで「調査中」にする
+    # 詳細ページで「調査中」にする
     visit admin_report_path(report)
     expect(page).to have_content("未対応")
     expect(page).to have_content("spam")
     expect(page).to have_content(recipe.title)
 
-    link = find_link("調査中にする")
-    confirm_message = link["data-turbo-confirm"] || link["data-confirm"]
+    # confirm文言はリンクのdata属性から取得（Turbo/非Turbo両対応）
+    confirm_message =
+      find_link("調査中にする")["data-turbo-confirm"] ||
+      find_link("調査中にする")["data-confirm"]
 
     accept_confirm(confirm_message, wait: 10) do
-      link.click
+      click_link "調査中にする"
     end
 
     # 表示は investigating の日本語（Report::STATUS_JA）
@@ -77,12 +79,13 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     expect(page).to have_content("レポート詳細")
     expect(page).to have_content("未対応")
 
-    # ===== ステータス変更 =====
-    link = find_link("解決済みにする")
-    confirm_message = link["data-turbo-confirm"] || link["data-confirm"]
+    # confirm文言はリンクのdata属性から取得（Turbo/非Turbo両対応）
+    confirm_message =
+      find_link("解決済みにする")["data-turbo-confirm"] ||
+      find_link("解決済みにする")["data-confirm"]
 
     accept_confirm(confirm_message, wait: 10) do
-      link.click
+      click_link "解決済みにする"
     end
 
     # ===== 反映確認 =====
@@ -105,10 +108,8 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     # 期待：管理画面に入れず、トップに戻される（実装に合わせて調整）
     expect(page).not_to have_content("レポート管理")
     expect(page).to have_current_path(root_path, ignore_query: true)
-
-    # 余裕があれば：フラッシュ文言（ある場合のみ）
-    # expect(page).to have_content("権限がありません")
   end
+
   it "未ログインユーザーは管理画面（レポート一覧）にアクセスできない" do
     visit admin_reports_path
     expect(page).to have_current_path(new_user_session_path, ignore_query: true)
