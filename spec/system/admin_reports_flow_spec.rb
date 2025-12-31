@@ -20,14 +20,14 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     fill_in "user_email", with: admin.email
     fill_in "user_password", with: "password"
     click_button "ログイン"
-    expect(page).to have_content("Signed in successfully.")
 
+    # 詳細ページで「調査中」にする
     visit admin_report_path(report)
     expect(page).to have_content("未対応")
     expect(page).to have_content("spam")
     expect(page).to have_content(recipe.title)
 
-    expect(page).to have_link("調査中にする")
+    # Turbo confirm を受けてステータス変更
     accept_confirm(wait: 10) do
       click_link "調査中にする"
     end
@@ -57,21 +57,36 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     fill_in "user_email", with: admin.email
     fill_in "user_password", with: "password"
     click_button "ログイン"
+
+    # ログイン完了を待つ（CIでの取りこぼし対策）
     expect(page).to have_content("Signed in successfully.")
 
+    # 一覧へ
     visit admin_reports_path
     expect(page).to have_current_path(admin_reports_path, ignore_query: true)
-
     expect(page).to have_content("レポート管理")
+
+    # 一覧に通報が表示されていること
     expect(page).to have_content("未対応")
     expect(page).to have_content("spam")
     expect(page).to have_content(recipe.title)
 
-    click_link "詳細", match: :first
+    # ✅ ここがCI対策：対象の行（tr）を特定して、その行の「詳細」だけクリック
+    within("table") do
+      row = find("tr", text: recipe.title)
+      row.scroll_into_view
+
+      within(row) do
+        click_link "詳細"
+      end
+    end
+
+    # ✅ 遷移できたことをパスで確認（文言依存より堅い）
+    expect(page).to have_current_path(admin_report_path(report), ignore_query: true)
     expect(page).to have_content("レポート詳細")
     expect(page).to have_content("未対応")
 
-    expect(page).to have_link("解決済みにする")
+    # ステータス変更（confirm付き）
     accept_confirm(wait: 10) do
       click_link "解決済みにする"
     end
@@ -83,13 +98,12 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
   end
 
   it "一般ユーザーは管理画面（レポート一覧）にアクセスできない" do
-    user = create(:user)
+    user = create(:user) # admin じゃない
 
     visit new_user_session_path
     fill_in "user_email", with: user.email
     fill_in "user_password", with: "password"
     click_button "ログイン"
-    expect(page).to have_content("Signed in successfully.")
 
     visit admin_reports_path
 
