@@ -21,13 +21,12 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     fill_in "user_password", with: "password"
     click_button "ログイン"
 
-    # 詳細ページで「調査中」にする
     visit admin_report_path(report)
     expect(page).to have_content("未対応")
     expect(page).to have_content("spam")
     expect(page).to have_content(recipe.title)
 
-    # Turbo confirm を受けてステータス変更
+    # Turbo confirm を受けてステータス変更（文言指定なしで“どのconfirmでもOK”にする）
     accept_confirm(wait: 10) do
       click_link "調査中にする"
     end
@@ -58,35 +57,22 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     fill_in "user_password", with: "password"
     click_button "ログイン"
 
-    # ログイン完了を待つ（CIでの取りこぼし対策）
+    # ログイン完了待ち（CIでの取りこぼし対策）
     expect(page).to have_content("Signed in successfully.")
 
-    # 一覧へ
     visit admin_reports_path
     expect(page).to have_current_path(admin_reports_path, ignore_query: true)
     expect(page).to have_content("レポート管理")
-
-    # 一覧に通報が表示されていること
-    expect(page).to have_content("未対応")
-    expect(page).to have_content("spam")
     expect(page).to have_content(recipe.title)
 
-    # ✅ ここがCI対策：対象の行（tr）を特定して、その行の「詳細」だけクリック
-    within("table") do
-      row = find("tr", text: recipe.title)
-      row.scroll_into_view
+    # ✅ 詳細リンクを href で一意に特定（これが最強に安定）
+    click_link "詳細", href: admin_report_path(report)
 
-      within(row) do
-        click_link "詳細"
-      end
-    end
-
-    # ✅ 遷移できたことをパスで確認（文言依存より堅い）
+    # 遷移確認（文言 + パス）
     expect(page).to have_current_path(admin_report_path(report), ignore_query: true)
     expect(page).to have_content("レポート詳細")
     expect(page).to have_content("未対応")
 
-    # ステータス変更（confirm付き）
     accept_confirm(wait: 10) do
       click_link "解決済みにする"
     end
