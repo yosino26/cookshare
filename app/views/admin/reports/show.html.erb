@@ -199,44 +199,48 @@
         </h5>
       </div>
       <div class="card-body">
-        <!-- ステータス変更 -->
-        <div class="mb-3">
-          <label class="form-label">ステータス変更</label>
-          <div class="d-grid gap-2">
-            <% unless @report.investigating? %>
-              <%= link_to admin_report_path(@report, report: { status: 'investigating' }),
-                  class: "btn btn-outline-info btn-sm",
-                  data: { turbo_method: :patch, turbo_confirm: "ステータスを「調査中」に変更しますか？" } do %>
-                <i class="fas fa-search me-1"></i>調査中にする
-              <% end %>
-            <% end %>
-          
-            <% unless @report.resolved? %>
-              <%= link_to admin_report_path(@report, report: { status: 'resolved' }),
-                  class: "btn btn-outline-success btn-sm",
-                  data: { turbo_method: :patch, turbo_confirm: "ステータスを「解決済み」に変更しますか？" } do %>
-                <i class="fas fa-check me-1"></i>解決済みにする
-              <% end %>
-            <% end %>
-          
-            <% unless @report.dismissed? %>
-              <%= link_to admin_report_path(@report, report: { status: 'dismissed' }),
-                  class: "btn btn-outline-secondary btn-sm",
-                  data: { turbo_method: :patch, turbo_confirm: "このレポートを却下しますか？" } do %>
-                <i class="fas fa-times me-1"></i>却下する
-              <% end %>
-            <% end %>
-          
-            <% unless @report.pending? %>
-              <%= link_to admin_report_path(@report, report: { status: 'pending' }),
-                  class: "btn btn-outline-warning btn-sm",
-                  data: { turbo_method: :patch, turbo_confirm: "ステータスを「未対応」に戻しますか？" } do %>
-                <i class="fas fa-undo me-1"></i>未対応に戻す
-              <% end %>
-            <% end %>
-          </div>
-        </div>
-
+         <!-- ステータス変更（confirm廃止 → Bootstrap modal） -->
+         <div class="mb-3">
+           <label class="form-label">ステータス変更</label>
+         
+           <div class="d-grid gap-2">
+             <% unless @report.investigating? %>
+               <button type="button"
+                       class="btn btn-outline-info btn-sm"
+                       data-bs-toggle="modal"
+                       data-bs-target="#modalReportStatusInvestigating">
+                 <i class="fas fa-search me-1"></i>調査中にする
+               </button>
+             <% end %>
+         
+             <% unless @report.resolved? %>
+               <button type="button"
+                       class="btn btn-outline-success btn-sm"
+                       data-bs-toggle="modal"
+                       data-bs-target="#modalReportStatusResolved">
+                 <i class="fas fa-check me-1"></i>解決済みにする
+               </button>
+             <% end %>
+         
+             <% unless @report.dismissed? %>
+               <button type="button"
+                       class="btn btn-outline-secondary btn-sm"
+                       data-bs-toggle="modal"
+                       data-bs-target="#modalReportStatusDismissed">
+                 <i class="fas fa-times me-1"></i>却下する
+               </button>
+             <% end %>
+         
+             <% unless @report.pending? %>
+               <button type="button"
+                       class="btn btn-outline-warning btn-sm"
+                       data-bs-toggle="modal"
+                       data-bs-target="#modalReportStatusPending">
+                 <i class="fas fa-undo me-1"></i>未対応に戻す
+               </button>
+             <% end %>
+           </div>
+         </div>         
         <hr>
 
         <!-- 対象コンテンツアクション -->
@@ -373,6 +377,99 @@
     </div>
   </div>
 <% end %>
+<!-- ===== ステータス変更モーダル群 ===== -->
+
+<!-- 調査中 -->
+<div class="modal fade" id="modalReportStatusInvestigating" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">確認</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+      </div>
+      <div class="modal-body">
+        ステータスを「調査中」に変更します。よろしいですか？
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+        <%= button_to admin_report_path(@report, report: { status: "investigating" }),
+                      method: :patch,
+                      class: "btn btn-info" do %>
+          変更する
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 解決済み -->
+<div class="modal fade" id="modalReportStatusResolved" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">確認</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+      </div>
+      <div class="modal-body">
+        ステータスを「解決済み」に変更します。よろしいですか？
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+        <%= button_to admin_report_path(@report, report: { status: "resolved" }),
+                      method: :patch,
+                      class: "btn btn-success" do %>
+          変更する
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 却下 -->
+<div class="modal fade" id="modalReportStatusDismissed" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">確認</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+      </div>
+      <div class="modal-body">
+        このレポートを「却下」にします。よろしいですか？
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+        <%= button_to admin_report_path(@report, report: { status: "dismissed" }),
+                      method: :patch,
+                      class: "btn btn-secondary" do %>
+          変更する
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 未対応に戻す -->
+<div class="modal fade" id="modalReportStatusPending" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">確認</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
+      </div>
+      <div class="modal-body">
+        ステータスを「未対応」に戻します。よろしいですか？
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+        <%= button_to admin_report_path(@report, report: { status: "pending" }),
+                      method: :patch,
+                      class: "btn btn-warning" do %>
+          変更する
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- レシピ非公開モーダル -->
 <% if @report.reportable_type == 'Recipe' %>
