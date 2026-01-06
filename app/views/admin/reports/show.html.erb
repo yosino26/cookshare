@@ -6,7 +6,6 @@
   <% end %>
 <% end %>
 
-<!-- ブレッドクラム設定 -->
 <%
 @breadcrumbs = [
   { name: "ダッシュボード", path: admin_root_path },
@@ -18,18 +17,15 @@
 <div class="row">
   <!-- メイン情報 -->
   <div class="col-lg-8">
-    <!-- レポート基本情報 -->
     <div class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-start">
         <div>
           <h5 class="mb-1">
-            <span class="badge bg-<%= @report.respond_to?(:status_color) ? @report.status_color : 'secondary' %> me-2">
-              <%= @report.respond_to?(:status_japanese) ? @report.status_japanese : '未設定' %>
+            <span class="badge bg-<%= @report.status_color %> me-2">
+              <%= @report.status_japanese %>
             </span>
-            
             <%= @report.reportable_type_japanese %>への報告
           </h5>
-
           <small class="text-muted">
             <% owner =
                  case @report.reportable
@@ -43,93 +39,38 @@
           <span class="badge bg-info">ID: <%= @report.id %></span>
         </div>
       </div>
+
       <div class="card-body">
-        <!-- 報告者情報 -->
+        <!-- 報告者・対象 -->
         <div class="row mb-4">
           <div class="col-md-6">
-            <h6 class="text-muted mb-2">
-              <i class="fas fa-user me-2"></i>報告者
-            </h6>
+            <h6 class="text-muted mb-2"><i class="fas fa-user me-2"></i>報告者</h6>
             <div class="d-flex align-items-center">
               <% if @report.reporter.avatar.attached? %>
-                <%= image_tag @report.reporter.avatar, 
-                    class: "rounded-circle me-3", size: "50x50" %>
+                <%= image_tag @report.reporter.avatar, class: "rounded-circle me-3", size: "50x50" %>
               <% else %>
-                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" 
-                     style="width: 50px; height: 50px;">
+                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" style="width:50px;height:50px;">
                   <i class="fas fa-user text-white"></i>
                 </div>
               <% end %>
-              <div>
-                <div class="fw-medium">
-                  <% if @report.reportable.present? %>
-                    <%= link_to @report.reportable_title,
-                                polymorphic_path([:admin, @report.reportable]),
-                                class: "text-decoration-none" %>
-                  <% else %>
-                    <span class="text-muted"><%= @report.reportable_title %>（削除済み）</span>
-                  <% end %>
-                </div>
+              <div class="fw-medium">
+                <%= @report.reporter.display_name %>
               </div>
             </div>
           </div>
+
           <div class="col-md-6">
-            <h6 class="text-muted mb-2">
-              <i class="fas fa-target me-2"></i>報告対象
-            </h6>
-            <div class="d-flex align-items-start">
-              <div class="me-3">
-                <% case @report.reportable_type %>
-                <% when 'Recipe' %>
-                  <% if @report.reportable.image.attached? %>
-                    <%= image_tag @report.reportable.image, 
-                        class: "rounded", size: "50x50", style: "object-fit: cover;" %>
-                  <% else %>
-                    <div class="rounded bg-light d-flex align-items-center justify-content-center" 
-                         style="width: 50px; height: 50px;">
-                      <i class="fas fa-utensils text-muted"></i>
-                    </div>
-                  <% end %>
-                <% when 'Comment' %>
-                  <div class="rounded bg-info bg-opacity-10 d-flex align-items-center justify-content-center" 
-                       style="width: 50px; height: 50px;">
-                    <i class="fas fa-comment text-info"></i>
-                  </div>
-                <% when 'User' %>
-                  <% if @report.reportable.avatar.attached? %>
-                    <%= image_tag @report.reportable.avatar, 
-                        class: "rounded-circle", size: "50x50" %>
-                  <% else %>
-                    <div class="rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center" 
-                         style="width: 50px; height: 50px;">
-                      <i class="fas fa-user text-warning"></i>
-                    </div>
-                  <% end %>
-                <% end %>
-              </div>
-              <div class="flex-grow-1">
-                <div class="fw-medium">
-                  <%= link_to @report.reportable_title, @report.reportable_admin_path, 
-                      class: "text-decoration-none" %>
-                </div>
-                <small class="text-muted">
-                  by <%= report_owner_name(@report) %>
-                </small>
-                <div class="mt-1">
-                  <span class="badge bg-light text-dark">
-                    作成: <%= @report.reportable&.created_at&.strftime("%Y/%m/%d") || '-' %>
-                  </span>
-                </div>
-              </div>
+            <h6 class="text-muted mb-2"><i class="fas fa-target me-2"></i>報告対象</h6>
+            <div class="fw-medium">
+              <%= link_to @report.reportable_title, @report.reportable_admin_path, class: "text-decoration-none" %>
             </div>
+            <small class="text-muted">by <%= report_owner_name(@report) %></small>
           </div>
         </div>
 
-        <!-- 報告内容 -->
+        <!-- 理由 -->
         <div class="mb-4">
-          <h6 class="text-muted mb-2">
-            <i class="fas fa-exclamation-triangle me-2"></i>報告理由
-          </h6>
+          <h6 class="text-muted mb-2"><i class="fas fa-exclamation-triangle me-2"></i>報告理由</h6>
           <div class="bg-light p-3 rounded">
             <p class="mb-0"><%= @report.reason %></p>
           </div>
@@ -137,20 +78,16 @@
 
         <% if @report.description.present? %>
           <div class="mb-4">
-            <h6 class="text-muted mb-2">
-              <i class="fas fa-file-text me-2"></i>詳細説明
-            </h6>
+            <h6 class="text-muted mb-2"><i class="fas fa-file-text me-2"></i>詳細説明</h6>
             <div class="bg-light p-3 rounded">
               <p class="mb-0" style="white-space: pre-line;"><%= @report.description %></p>
             </div>
           </div>
         <% end %>
 
-        <!-- 報告対象のプレビュー -->
+        <!-- プレビュー -->
         <div class="mb-4">
-          <h6 class="text-muted mb-2">
-            <i class="fas fa-eye me-2"></i>対象コンテンツ
-          </h6>
+          <h6 class="text-muted mb-2"><i class="fas fa-eye me-2"></i>対象コンテンツ</h6>
           <div class="border rounded p-3">
             <%= render "admin/reports/reportable_preview", report: @report %>
           </div>
@@ -160,30 +97,14 @@
 
     <!-- 管理者ノート -->
     <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">
-          <i class="fas fa-sticky-note me-2"></i>管理者ノート
-        </h5>
-      </div>
+      <div class="card-header"><h5 class="mb-0"><i class="fas fa-sticky-note me-2"></i>管理者ノート</h5></div>
       <div class="card-body">
         <%= form_with model: [:admin, @report], class: "mb-3" do |form| %>
           <div class="mb-3">
             <%= form.label :admin_note, "内部メモ（管理者のみ閲覧可能）", class: "form-label" %>
-            <%= form.text_area :admin_note, rows: 4, class: "form-control", 
-                placeholder: "調査内容、対応状況、今後の方針など..." %>
+            <%= form.text_area :admin_note, rows: 4, class: "form-control" %>
           </div>
-          <div class="text-end">
-            <%= form.submit "ノートを保存", class: "btn btn-outline-primary" %>
-          </div>
-        <% end %>
-
-        <% if @report.admin_response.present? %>
-          <div class="bg-light p-3 rounded">
-            <small class="text-muted d-block mb-2">
-              <%= @report.updated_at.strftime("%Y年%m月%d日 %H:%M") %>更新
-            </small>
-            <div style="white-space: pre-line;"><%= @report.admin_response %></div>
-          </div>
+          <div class="text-end"><%= form.submit "ノートを保存", class: "btn btn-outline-primary" %></div>
         <% end %>
       </div>
     </div>
@@ -191,84 +112,31 @@
 
   <!-- サイドバー -->
   <div class="col-lg-4">
-    <!-- アクションパネル -->
     <div class="card mb-4">
-      <div class="card-header">
-        <h5 class="mb-0">
-          <i class="fas fa-cog me-2"></i>アクション
-        </h5>
-      </div>
+      <div class="card-header"><h5 class="mb-0"><i class="fas fa-cog me-2"></i>アクション</h5></div>
       <div class="card-body">
-         <!-- ステータス変更（confirm廃止 → Bootstrap modal） -->
-         <div class="mb-3">
-           <label class="form-label">ステータス変更</label>
-         
-           <div class="d-grid gap-2">
-             <% unless @report.investigating? %>
-               <button type="button"
-                       class="btn btn-outline-info btn-sm"
-                       data-bs-toggle="modal"
-                       data-bs-target="#modalReportStatusInvestigating">
-                 <i class="fas fa-search me-1"></i>調査中にする
-               </button>
-             <% end %>
-         
-             <% unless @report.resolved? %>
-               <button type="button"
-                       class="btn btn-outline-success btn-sm"
-                       data-bs-toggle="modal"
-                       data-bs-target="#modalReportStatusResolved">
-                 <i class="fas fa-check me-1"></i>解決済みにする
-               </button>
-             <% end %>
-         
-             <% unless @report.dismissed? %>
-               <button type="button"
-                       class="btn btn-outline-secondary btn-sm"
-                       data-bs-toggle="modal"
-                       data-bs-target="#modalReportStatusDismissed">
-                 <i class="fas fa-times me-1"></i>却下する
-               </button>
-             <% end %>
-         
-             <% unless @report.pending? %>
-               <button type="button"
-                       class="btn btn-outline-warning btn-sm"
-                       data-bs-toggle="modal"
-                       data-bs-target="#modalReportStatusPending">
-                 <i class="fas fa-undo me-1"></i>未対応に戻す
-               </button>
-             <% end %>
-           </div>
-         </div>         
-        <hr>
-
-        <!-- 対象コンテンツアクション -->
+        <!-- ステータス変更 -->
         <div class="mb-3">
-          <label class="form-label">対象コンテンツ</label>
+          <label class="form-label">ステータス変更</label>
           <div class="d-grid gap-2">
-            <%= link_to @report.reportable_admin_path, class: "btn btn-outline-primary btn-sm" do %>
-              <i class="fas fa-external-link-alt me-1"></i>詳細を確認
-            <% end %>
-
-            <% if @report.reportable_type == 'User' %>
-              <button type="button" class="btn btn-outline-danger btn-sm" 
-                      data-bs-toggle="modal" data-bs-target="#suspendUserModal">
-                <i class="fas fa-user-slash me-1"></i>ユーザーを停止
+            <% unless @report.investigating? %>
+              <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#modalReportStatusInvestigating">
+                <i class="fas fa-search me-1"></i>調査中にする
               </button>
             <% end %>
-
-            <% if @report.reportable_type == 'Recipe' %>
-              <button type="button" class="btn btn-outline-warning btn-sm"
-                      data-bs-toggle="modal" data-bs-target="#hideRecipeModal">
-                <i class="fas fa-eye-slash me-1"></i>レシピを非公開
+            <% unless @report.resolved? %>
+              <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalReportStatusResolved">
+                <i class="fas fa-check me-1"></i>解決済みにする
               </button>
             <% end %>
-
-            <% if @report.reportable_type == 'Comment' %>
-              <button type="button" class="btn btn-outline-danger btn-sm"
-                      data-bs-toggle="modal" data-bs-target="#deleteCommentModal">
-                <i class="fas fa-trash me-1"></i>コメントを削除
+            <% unless @report.dismissed? %>
+              <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalReportStatusDismissed">
+                <i class="fas fa-times me-1"></i>却下する
+              </button>
+            <% end %>
+            <% unless @report.pending? %>
+              <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalReportStatusPending">
+                <i class="fas fa-undo me-1"></i>未対応に戻す
               </button>
             <% end %>
           </div>
@@ -276,278 +144,86 @@
 
         <hr>
 
-        <!-- 削除 -->
-        <div class="d-grid">
-          <%= link_to admin_report_path(@report), 
-              method: :delete,
-              class: "btn btn-outline-danger btn-sm",
-              data: { 
-                turbo_method: :delete,
-                confirm: "このレポートを完全に削除しますか？この操作は取り消せません。"
-              } do %>
-            <i class="fas fa-trash me-1"></i>レポートを削除
-          <% end %>
-        </div>
-      </div>
-    </div>
-
-    <!-- 関連情報 -->
-    <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">
-          <i class="fas fa-info-circle me-2"></i>関連情報
-        </h5>
-      </div>
-      <div class="card-body">
-        <!-- 報告者の他のレポート -->
-        <% if @reporter_reports.any? %>
-          <div class="mb-3">
-            <h6 class="text-muted">この報告者の他のレポート</h6>
-            <ul class="list-unstyled">
-              <% @reporter_reports.each do |report| %>
-                <li class="mb-1">
-                  <%= link_to admin_report_path(report), class: "text-decoration-none small" do %>
-                    <span class="badge bg-<%= report.status_color %>"><%= report.status_japanese %></span>
-                    <%= truncate(report.reason, length: 30) %>
-                  <% end %>
-                </li>
-              <% end %>
-            </ul>
-          </div>
-        <% end %>
-
-        <!-- 統計情報 -->
-        <div>
-          <h6 class="text-muted">統計</h6>
-          <ul class="list-unstyled small">
-            <li>報告者レポート数: <%= @reporter_reports.count %>件</li>
-            <li>対象レポート数: <%= @related_reports.count %>件</li> </li>
-            <li>今月のレポート数: <%= Report.where(created_at: Time.current.beginning_of_month..Time.current.end_of_month).count %>件</li>
-          </ul>
-        </div>
+        <!-- 削除（モーダル） -->
+        <button type="button" class="btn btn-outline-danger btn-sm w-100" data-bs-toggle="modal" data-bs-target="#deleteReportModal">
+          <i class="fas fa-trash me-1"></i>レポートを削除
+        </button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- モーダル群 --><!-- ユーザー停止モーダル -->
-<% if @report.reportable_type == 'User' %>
-  <div class="modal fade" id="suspendUserModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">
-            <i class="fas fa-user-slash text-danger me-2"></i>
-            ユーザーを停止
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <%= form_with url: suspend_admin_user_path(@report.reportable), 
-            method: :patch, class: "modal-form" do |form| %>
-          <div class="modal-body">
-            <div class="alert alert-warning">
-              <i class="fas fa-exclamation-triangle me-2"></i>
-              <strong><%= @report.reportable.display_name %></strong>さんのアカウントを停止しますか？
-            </div>
-            <div class="mb-3">
-              <%= form.label :suspend_reason, "停止理由", class: "form-label" %>
-              <%= form.text_area :suspend_reason, rows: 3, class: "form-control", 
-                  placeholder: "停止理由を入力してください..." %>
-            </div>
-            <div class="mb-3">
-              <%= form.label :suspend_duration, "停止期間", class: "form-label" %>
-              <%= form.select :suspend_duration, 
-                  options_for_select([
-                    ['1日', '1'],
-                    ['3日', '3'],
-                    ['1週間', '7'],
-                    ['1ヶ月', '30'],
-                    ['無期限', '0']
-                  ]), 
-                  { prompt: '期間を選択...' },
-                  { class: "form-select" } %>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-            <%= form.submit "ユーザーを停止", class: "btn btn-danger" %>
-          </div>
-        <% end %>
-      </div>
-    </div>
-  </div>
-<% end %>
 <!-- ===== ステータス変更モーダル群 ===== -->
 
-<!-- 調査中 -->
-<div class="modal fade" id="modalReportStatusInvestigating" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">確認</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
-      </div>
-      <div class="modal-body">
-        ステータスを「調査中」に変更します。よろしいですか？
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-        <%= button_to admin_report_path(@report, report: { status: "investigating" }),
-                      method: :patch,
-                      class: "btn btn-info" do %>
-          変更する
-        <% end %>
-      </div>
+<div class="modal fade" id="modalReportStatusInvestigating" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">確認</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">ステータスを「調査中」に変更します。よろしいですか？</div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+      <%= button_to admin_report_path(@report, report: { status: "investigating" }),
+                    method: :patch, form_class: "d-inline", class: "btn btn-info", data: { turbo: false } do %>
+        変更する
+      <% end %>
     </div>
-  </div>
+  </div></div>
 </div>
 
-<!-- 解決済み -->
-<div class="modal fade" id="modalReportStatusResolved" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">確認</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
-      </div>
-      <div class="modal-body">
-        ステータスを「解決済み」に変更します。よろしいですか？
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-        <%= button_to admin_report_path(@report, report: { status: "resolved" }),
-                      method: :patch,
-                      class: "btn btn-success" do %>
-          変更する
-        <% end %>
-      </div>
+<div class="modal fade" id="modalReportStatusResolved" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">確認</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">ステータスを「解決済み」に変更します。よろしいですか？</div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+      <%= button_to admin_report_path(@report, report: { status: "resolved" }),
+                    method: :patch, form_class: "d-inline", class: "btn btn-success", data: { turbo: false } do %>
+        変更する
+      <% end %>
     </div>
-  </div>
+  </div></div>
 </div>
 
-<!-- 却下 -->
-<div class="modal fade" id="modalReportStatusDismissed" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">確認</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
-      </div>
-      <div class="modal-body">
-        このレポートを「却下」にします。よろしいですか？
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-        <%= button_to admin_report_path(@report, report: { status: "dismissed" }),
-                      method: :patch,
-                      class: "btn btn-secondary" do %>
-          変更する
-        <% end %>
-      </div>
+<div class="modal fade" id="modalReportStatusDismissed" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">確認</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">このレポートを「却下」にします。よろしいですか？</div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+      <%= button_to admin_report_path(@report, report: { status: "dismissed" }),
+                    method: :patch, form_class: "d-inline", class: "btn btn-secondary", data: { turbo: false } do %>
+        変更する
+      <% end %>
     </div>
-  </div>
+  </div></div>
 </div>
 
-<!-- 未対応に戻す -->
-<div class="modal fade" id="modalReportStatusPending" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">確認</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="閉じる"></button>
-      </div>
-      <div class="modal-body">
-        ステータスを「未対応」に戻します。よろしいですか？
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-        <%= button_to admin_report_path(@report, report: { status: "pending" }),
-                      method: :patch,
-                      class: "btn btn-warning" do %>
-          変更する
-        <% end %>
-      </div>
+<div class="modal fade" id="modalReportStatusPending" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">確認</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">ステータスを「未対応」に戻します。よろしいですか？</div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+      <%= button_to admin_report_path(@report, report: { status: "pending" }),
+                    method: :patch, form_class: "d-inline", class: "btn btn-warning", data: { turbo: false } do %>
+        変更する
+      <% end %>
     </div>
-  </div>
+  </div></div>
 </div>
 
-<!-- レシピ非公開モーダル -->
-<% if @report.reportable_type == 'Recipe' %>
-  <div class="modal fade" id="hideRecipeModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">
-            <i class="fas fa-eye-slash text-warning me-2"></i>
-            レシピを非公開
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <%= form_with url: hide_admin_recipe_path(@report.reportable), 
-            method: :patch, class: "modal-form" do |form| %>
-          <div class="modal-body">
-            <div class="alert alert-warning">
-              <i class="fas fa-exclamation-triangle me-2"></i>
-              レシピ「<strong><%= @report.reportable.title %></strong>」を非公開にしますか？
-            </div>
-            <div class="mb-3">
-              <%= form.label :hide_reason, "非公開理由", class: "form-label" %>
-              <%= form.text_area :hide_reason, rows: 3, class: "form-control", 
-                  placeholder: "非公開にする理由を入力してください..." %>
-            </div>
-            <div class="form-check">
-              <%= form.check_box :notify_user, class: "form-check-input" %>
-              <%= form.label :notify_user, "ユーザーに通知する", class: "form-check-label" %>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-            <%= form.submit "非公開にする", class: "btn btn-warning" %>
-          </div>
-        <% end %>
-      </div>
+<!-- 削除モーダル -->
+<div class="modal fade" id="deleteReportModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title text-danger">確認</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      このレポートを完全に削除します。<strong>この操作は取り消せません。</strong>
     </div>
-  </div>
-<% end %>
-
-<!-- コメント削除モーダル -->
-<% if @report.reportable_type == 'Comment' %>
-  <div class="modal fade" id="deleteCommentModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">
-            <i class="fas fa-trash text-danger me-2"></i>
-            コメントを削除
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <%= form_with url: admin_comment_path(@report.reportable), 
-            method: :delete, class: "modal-form" do |form| %>
-          <div class="modal-body">
-            <div class="alert alert-danger">
-              <i class="fas fa-exclamation-triangle me-2"></i>
-              このコメントを削除しますか？この操作は取り消せません。
-            </div>
-            <div class="bg-light p-3 rounded mb-3">
-              <%= truncate(@report.reportable.content, length: 200) %>
-            </div>
-            <div class="mb-3">
-              <%= form.label :delete_reason, "削除理由", class: "form-label" %>
-              <%= form.text_area :delete_reason, rows: 3, class: "form-control", 
-                  placeholder: "削除理由を入力してください..." %>
-            </div>
-            <div class="form-check">
-              <%= form.check_box :notify_user, class: "form-check-input" %>
-              <%= form.label :notify_user, "ユーザーに通知する", class: "form-check-label" %>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
-            <%= form.submit "コメントを削除", class: "btn btn-danger" %>
-          </div>
-        <% end %>
-      </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+      <%= button_to admin_report_path(@report),
+                    method: :delete, form_class: "d-inline", class: "btn btn-danger", data: { turbo: false } do %>
+        削除する
+      <% end %>
     </div>
-  </div>
-<% end %>
+  </div></div>
+</div>
