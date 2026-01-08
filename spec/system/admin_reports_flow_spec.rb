@@ -43,7 +43,7 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     reporter = create(:user)
     recipe_owner = create(:user)
     recipe = create(:recipe, user: recipe_owner)
-
+  
     report = create(
       :report,
       reporter: reporter,
@@ -52,25 +52,30 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
       reason: :spam,
       description: "不適切な内容があります。詳細を確認してください。"
     )
-
+  
     visit new_user_session_path
     fill_in "user_email", with: admin.email
     fill_in "user_password", with: "password"
     click_button "ログイン"
-
+  
+    admin.reload
+    expect(admin).to be_admin  # ここで落ちたら factory/モデル側
+  
+    expect(page).not_to have_current_path(new_user_session_path, ignore_query: true)
+  
     visit admin_reports_path
     expect(page).to have_current_path(admin_reports_path, ignore_query: true)
-
+  
     click_link "詳細", match: :first
     expect(page).to have_current_path(admin_report_path(report), ignore_query: true)
-
+  
     click_button "解決済みにする"
     expect(page).to have_css("#modalReportStatusResolved", visible: true)
-
+  
     within("#modalReportStatusResolved") do
       click_button "変更する"
     end
-
+  
     expect(page).to have_content("対応済み")
     report.reload
     expect(report).to be_resolved
