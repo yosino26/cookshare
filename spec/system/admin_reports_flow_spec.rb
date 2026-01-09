@@ -99,4 +99,14 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     expect(page).to have_current_path(root_path, ignore_query: true)
   end
   
+  it "未ログインユーザーは管理画面（レポート一覧）にアクセスできない" do
+    visit admin_reports_path
+  
+    # Deviseの挙動に合わせて「ログイン画面へ飛ばされる」ことを確認
+    expect(page).to have_current_path(new_user_session_path, ignore_query: true)
+  
+    # フラッシュ文言はアプリで差が出やすいので、入れるならゆるめに
+    expect(page).to have_content("ログイン").or have_content("サインイン")
+  end
+  
 end
