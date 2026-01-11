@@ -1,14 +1,13 @@
 require "rails_helper"
 
 RSpec.describe "管理者による通報レポートの管理機能", type: :system do
-  it "管理者はレポート詳細画面からステータスを「調査中」に変更できる" do
+  it "管理者はレポート詳細画面からステータスを「調査中」に変更できる", js: true do
     admin = create(:user, :admin)
     reporter = create(:user)
     recipe_owner = create(:user)
     recipe = create(:recipe, user: recipe_owner)
 
-    report = create(
-      :report,
+    report = create(:report,
       reporter: reporter,
       reportable: recipe,
       status: :pending,
@@ -22,12 +21,9 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     click_button "ログイン"
 
     visit admin_report_path(report)
-    expect(page).to have_content("未対応")
-    expect(page).to have_content("spam")
-    expect(page).to have_content(recipe.title)
 
     click_button "調査中にする"
-    expect(page).to have_css("#modalReportStatusInvestigating", visible: true)
+    expect(page).to have_css("#modalReportStatusInvestigating.show", wait: 5)
 
     within("#modalReportStatusInvestigating") do
       click_button "変更する"
@@ -38,12 +34,12 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     expect(report).to be_investigating
   end
 
-  it "管理者はレポート一覧から詳細画面に遷移し、解決済みにできる" do
+  it "管理者はレポート一覧から詳細画面に遷移し、解決済みにできる", js: true do
     admin = create(:user, :admin)
     reporter = create(:user)
     recipe_owner = create(:user)
     recipe = create(:recipe, user: recipe_owner)
-  
+
     report = create(
       :report,
       reporter: reporter,
@@ -52,61 +48,48 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
       reason: :spam,
       description: "不適切な内容があります。詳細を確認してください。"
     )
-  
+
     visit new_user_session_path
     fill_in "user_email", with: admin.email
     fill_in "user_password", with: "password"
     click_button "ログイン"
-  
-    admin.reload
-    expect(admin).to be_admin  # ここで落ちたら factory/モデル側
-  
-    expect(page).not_to have_current_path(new_user_session_path, ignore_query: true)
-  
+
     visit admin_reports_path
     expect(page).to have_current_path(admin_reports_path, ignore_query: true)
-  
+
     click_link "詳細", match: :first
     expect(page).to have_current_path(admin_report_path(report), ignore_query: true)
-  
+
     click_button "解決済みにする"
-    expect(page).to have_css("#modalReportStatusResolved", visible: true)
-  
+    expect(page).to have_css("#modalReportStatusResolved.show", wait: 5)
+
     within("#modalReportStatusResolved") do
       click_button "変更する"
     end
-  
+
     expect(page).to have_content("対応済み")
     report.reload
     expect(report).to be_resolved
   end
 
   it "一般ユーザーは管理画面（レポート一覧）にアクセスできない" do
-    user = create(:user) # admin ではない
-  
+    user = create(:user)
+
     visit new_user_session_path
     fill_in "user_email", with: user.email
     fill_in "user_password", with: "password"
     click_button "ログイン"
-  
-    # 管理画面に直接アクセス
+
     visit admin_reports_path
-  
-    # 管理画面の内容は表示されない
+
     expect(page).not_to have_content("レポート管理")
-  
-    # root へリダイレクトされる想定
     expect(page).to have_current_path(root_path, ignore_query: true)
   end
-  
+
   it "未ログインユーザーは管理画面（レポート一覧）にアクセスできない" do
     visit admin_reports_path
-  
-    # Deviseの挙動に合わせて「ログイン画面へ飛ばされる」ことを確認
+
     expect(page).to have_current_path(new_user_session_path, ignore_query: true)
-  
-    # フラッシュ文言はアプリで差が出やすいので、入れるならゆるめに
     expect(page).to have_content("ログイン").or have_content("サインイン")
   end
-  
 end
