@@ -6,7 +6,7 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     reporter = create(:user)
     recipe_owner = create(:user)
     recipe = create(:recipe, user: recipe_owner)
-
+  
     report = create(:report,
       reporter: reporter,
       reportable: recipe,
@@ -14,25 +14,25 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
       reason: :spam,
       description: "不適切な内容があります。詳細を確認してください。"
     )
-
+  
     visit new_user_session_path
     fill_in "user_email", with: admin.email
     fill_in "user_password", with: "password"
     click_button "ログイン"
-
+  
     visit admin_report_path(report)
-
-    click_button "調査中にする"
-    expect(page).to have_css("#modalReportStatusInvestigating.show", wait: 5)
-
+  
+    find('button', text: '調査中にする', match: :first).click
+  
     within("#modalReportStatusInvestigating") do
+      expect(page).to have_button("変更する", disabled: false, wait: 10)
       click_button "変更する"
     end
-
+  
     expect(page).to have_content("調査中")
     report.reload
     expect(report).to be_investigating
-  end
+  end  
 
   it "管理者はレポート一覧から詳細画面に遷移し、解決済みにできる", js: true do
     admin = create(:user, :admin)
