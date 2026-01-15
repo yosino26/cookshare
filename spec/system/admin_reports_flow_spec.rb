@@ -9,20 +9,18 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     click_button "ログイン"
   end
 
-  # ボタン押下 -> モーダルが「開いた」まで待つ
-  # scroll_into_view はCIで未対応/ドライバ依存があり落ちるので使わない
+  # ボタン押下 -> モーダルが開くまで待つ
   def open_modal_by_button(button_text, modal_selector)
     expect(page).to have_button(button_text, wait: 10)
     click_button button_text
 
-    # DOMに存在する（表示/非表示問わず）
+    # DOMにある（表示/非表示問わず）
     expect(page).to have_css(modal_selector, visible: :all, wait: 10)
-
-    # Bootstrap modalが開くと .show が付く（visible:true より安定しやすい）
+    # 開くと .show が付く
     expect(page).to have_css("#{modal_selector}.show", visible: :all, wait: 10)
   end
 
-  # モーダル内の「変更する」を押す（モーダルが開いている前提）
+  # モーダル内の送信
   def submit_modal(modal_selector, submit_text: "変更する")
     within(modal_selector) do
       expect(page).to have_button(submit_text, wait: 10)
@@ -76,47 +74,54 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     )
 
     login_as(admin)
-
-    # 念のため（落ちたらfactory/モデルの問題）
     admin.reload
     expect(admin).to be_admin
 
     visit admin_reports_path
     expect(page).to have_current_path(admin_reports_path, ignore_query: true)
 
-    click_link "詳細", match: :first
+    # --- ここがCIでコケてるので “リンク特定” を強める ---
+    # 一覧の中から「このreportの行」を見つけて、その中の「詳細」を押す
+    # ※ report.id は一覧に出てる前提（出てないなら title 等に差し替え）
+    row_selector = "tr"
+    target_row =
+      all(row_selector).find do |tr|
+        tr.text.include?(report.id.to_s) || tr.text.include?(recipe.title)
+      end
+
+    expect(target_row).to be_present
+
+    within(target_row) do
+      # Turboで遷移が遅い/不安定な時があるので “待つ”
+      expect(page).to have_link("詳細", wait: 10)
+      click_link "詳細"
+    end
+
+    # 「パスが変わる」より「詳細ページの要素が出る」を待つ方が堅い
+    expect(page).to have_content("レポート詳細", wait: 10)
     expect(page).to have_current_path(admin_report_path(report), ignore_query: true)
 
     open_modal_by_button("解決済みにする", "#modalReportStatusResolved")
     submit_modal("#modalReportStatusResolved", submit_text: "変更する")
 
-    # 表示文言はアプリ側に合わせる（例：対応済み）
     expect(page).to have_content("対応済み")
     report.reload
     expect(report).to be_resolved
   end
 
   it "一般ユーザーは管理画面（レポート一覧）にアクセスできない" do
-    user = create(:user) # adminではない
+    user = create(:user)
 
     login_as(user)
 
     visit admin_reports_path
-
-    # 管理画面の内容は表示されない
     expect(page).not_to have_content("レポート管理")
-
-    # root へリダイレクトされる想定
     expect(page).to have_current_path(root_path, ignore_query: true)
   end
 
   it "未ログインユーザーは管理画面（レポート一覧）にアクセスできない" do
     visit admin_reports_path
-
-    # Deviseの挙動：ログイン画面へ
     expect(page).to have_current_path(new_user_session_path, ignore_query: true)
-
-    # 文言は環境差が出やすいのでゆるめ
     expect(page).to have_content("ログイン").or have_content("サインイン")
   end
 end
