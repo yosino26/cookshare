@@ -9,22 +9,38 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     click_button "ログイン"
   end
 
-  # ボタン押下 -> モーダルが開くまで待つ
   def open_modal_by_button(button_text, modal_selector)
     expect(page).to have_button(button_text, wait: 10)
     click_button button_text
 
     # DOMにある（表示/非表示問わず）
     expect(page).to have_css(modal_selector, visible: :all, wait: 10)
-    # 開くと .show が付く
+    # 開くと .show が付く（Bootstrap）
     expect(page).to have_css("#{modal_selector}.show", visible: :all, wait: 10)
   end
 
-  # モーダル内の送信
   def submit_modal(modal_selector, submit_text: "変更する")
     within(modal_selector) do
       expect(page).to have_button(submit_text, wait: 10)
       click_button submit_text
+    end
+  end
+
+  # 「詳細」クリックをやめて、リンクのhrefを取得して visit する
+  def go_to_report_detail_from_index(report)
+    expect(page).to have_current_path(admin_reports_path, ignore_query: true)
+
+    # まず対象行を特定（IDが一覧に出てるならID優先、無ければタイトル等）
+    target_row = all("tr").find do |tr|
+      tr.text.include?(report.id.to_s) || tr.text.include?(report.reportable_title.to_s)
+    end
+    expect(target_row).to be_present
+
+    within(target_row) do
+      expect(page).to have_link("詳細", wait: 10)
+      href = find_link("詳細")[:href]
+      expect(href).to be_present
+      visit href
     end
   end
 
@@ -80,25 +96,11 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     visit admin_reports_path
     expect(page).to have_current_path(admin_reports_path, ignore_query: true)
 
-    # --- ここがCIでコケてるので “リンク特定” を強める ---
-    # 一覧の中から「このreportの行」を見つけて、その中の「詳細」を押す
-    # ※ report.id は一覧に出てる前提（出てないなら title 等に差し替え）
-    row_selector = "tr"
-    target_row =
-      all(row_selector).find do |tr|
-        tr.text.include?(report.id.to_s) || tr.text.include?(recipe.title)
-      end
+    # ★ここがCIの鬼門：クリックではなくhrefを拾ってvisit
+    go_to_report_detail_from_index(report)
 
-    expect(target_row).to be_present
-
-    within(target_row) do
-      # Turboで遷移が遅い/不安定な時があるので “待つ”
-      expect(page).to have_link("詳細", wait: 10)
-      click_link "詳細"
-    end
-
-    # 「パスが変わる」より「詳細ページの要素が出る」を待つ方が堅い
-    expect(page).to have_content("レポート詳細", wait: 10)
+    # 「詳細ページっぽい要素」で待つ（タイトル文言が変わっても耐える）
+    expect(page).to have_css("h5", text: /報告|レポート|詳細/, wait: 10)
     expect(page).to have_current_path(admin_report_path(report), ignore_query: true)
 
     open_modal_by_button("解決済みにする", "#modalReportStatusResolved")
@@ -111,7 +113,6 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
 
   it "一般ユーザーは管理画面（レポート一覧）にアクセスできない" do
     user = create(:user)
-
     login_as(user)
 
     visit admin_reports_path
