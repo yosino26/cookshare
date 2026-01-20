@@ -75,7 +75,7 @@ URL: [https://cookshare-ygta.onrender.com/](https://cookshare-ygta.onrender.com/
 | 管理機能 | 管理者ダッシュボード | ✅ |
 | | 通報管理（一般ユーザー・管理者） | ✅ |
 | | ユーザー / レシピ / コメント管理 | ✅ |
-| テスト | モデル / バリデーション / 一意制約テスト | ⏳進行中 |
+| テスト | モデル / リクエスト / DB制約 / system spec | ✅（拡充中） |
 
 ---
 
@@ -289,6 +289,12 @@ CookShareは、家庭料理を共有し、他のユーザーと交流できるSN
   - Capybara（`rack_test` / `selenium headless` 切り替え）  
   - 画像フィクスチャ：`spec/fixtures/files/sample.jpg`  
   - `spec/support/capybara.rb`
+  - 管理者：通報レポートのステータス変更（Bootstrapモーダル操作）
+  - 詳細画面で「調査中」に変更できる（モーダルで確定）
+  - 一覧 → 詳細へ遷移し「解決済み」に変更できる（モーダルで確定）
+  - 一般ユーザーは管理画面（レポート一覧）へアクセスできない
+  - 未ログインユーザーはログイン画面へリダイレクトされる
+  - `spec/system/admin_reports_flow_spec.rb
 
 ### ⑦ CI（自動実行）
 
@@ -317,16 +323,23 @@ CookShareは、家庭料理を共有し、他のユーザーと交流できるSN
 
 ## 🌱 今後の展望
 
-- コメント通報機能の追加（User / Recipe に加えて Comment 対象を拡張）
-- SNS 共有・印刷機能の追加
-- Active Storage × S3 連携による本番運用化
-- アクセシビリティ対応・UI 改善
-- React 導入（段階的）
-  - Option A: React Islands（vite_ruby + React）— 検索・いいね一覧を React 化
-  - Option B: 部分 SPA（マイページ / 管理画面のみ react-router-dom で構成）
-  - Option C: 完全 SPA（Rails を API 化：jbuilder / jsonapi-serializer + OpenAPI）
-- 検索強化：pg_trgm + pg_search（部分一致／類似検索）や Meilisearch の検討
-- タグ機能：acts-as-taggable-on 等を用いたタグ × カテゴリの複合検索・関連レシピ表示
+- 管理画面・通報フローのテスト拡充
+  - 管理者の通報ステータス変更（一覧/詳細/モーダル）を system spec でカバー範囲拡大
+  - 検索・絞り込み（ステータス / 対象タイプ / 期間）の E2E テスト追加
+- 通報機能の改善
+  - 通報詳細での「対応メモ」や履歴ログ（誰がいつステータス変更したか）を検討
+  - 通報一覧の操作性改善（行内アクション・一括操作など）
+- 検索強化
+  - `pg_trgm + pg_search`（部分一致／類似検索）や Meilisearch の検討
+  - タグ機能の追加（タグ × カテゴリの複合検索・関連レシピ表示）
+- 画像・運用面の強化
+  - Active Storage × S3 の運用前提の整理（削除・更新時の整合性チェック含む）
+- UI/UX 改善
+  - アクセシビリティ対応、表示速度改善、スマホUI最適化
+- フロントエンド拡張（段階導入）
+  - Option A: React Islands（検索・一覧の一部をReact化）
+  - Option B: 部分 SPA（マイページ / 管理画面のみ）
+  - Option C: 完全 SPA（Rails API 化 + OpenAPI）
 
 
 
