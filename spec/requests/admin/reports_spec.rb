@@ -21,8 +21,13 @@ RSpec.describe "Admin::Reports", type: :request do
         expect(flash[:alert]).to eq "管理者権限が必要です"
       end
 
+      it "未ログインはログイン画面へリダイレクトされる" do
+        get admin_reports_path
 
- 
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(new_user_session_path)
+      end
+      
     end
   end
 end
