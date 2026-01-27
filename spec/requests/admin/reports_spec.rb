@@ -67,6 +67,15 @@ RSpec.describe "Admin::Reports", type: :request do
         expect(body).not_to include("other@example.com")
         expect(body).not_to include("通報対象ユーザー")
       end
+      it "reportable_type 指定で絞り込める（Recipe）" do
+        get admin_reports_path, params: { reportable_type: "Recipe" }
+        expect(response).to have_http_status(:ok)
+
+        body = response.body
+        expect(body).to include("寿司タワー")
+        expect(body).not_to include("通報対象ユーザー")
+        expect(body).not_to include("これはスパムっぽいコメントです")
+      end
     end
   end
 end
