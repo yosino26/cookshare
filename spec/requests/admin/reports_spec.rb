@@ -85,6 +85,17 @@ RSpec.describe "Admin::Reports", type: :request do
         expect(body).not_to include("寿司タワー")
         expect(body).not_to include("これはスパムっぽいコメントです")
       end
+      it "期間（date_from / date_to）で絞り込める" do
+        get admin_reports_path, params: { date_from: "2026-01-11", date_to: "2026-01-13" }
+        expect(response).to have_http_status(:ok)
+
+        body = response.body
+        expect(body).to include("other@example.com")
+        expect(body).to include("通報対象ユーザー")
+
+        expect(body).not_to include("寿司タワー")
+        expect(body).not_to include("これはスパムっぽいコメントです")
+      end
     end
   end
 end
