@@ -96,6 +96,15 @@ RSpec.describe "Admin::Reports", type: :request do
         expect(body).not_to include("寿司タワー")
         expect(body).not_to include("これはスパムっぽいコメントです")
       end
+      it "フィルターなしは全件が表示される" do
+        get admin_reports_path
+        expect(response).to have_http_status(:ok)
+
+        body = response.body
+        expect(body).to include("寿司タワー")
+        expect(body).to include("通報対象ユーザー")
+        expect(body).to include("これはスパムっぽいコメントです")
+      end
     end
   end
 end
