@@ -106,5 +106,31 @@ RSpec.describe "Admin::Reports", type: :request do
         expect(body).to include("これはスパムっぽいコメントです")
       end
     end
+    context "並び順（デフォルト: created_at desc）" do
+      let!(:reporter) { create(:user, email: "order@example.com") }
+      let!(:recipe_old) { create(:recipe, user: create(:user), title: "古いレシピ") }
+      let!(:recipe_new) { create(:recipe, user: create(:user), title: "新しいレシピ") }
+
+      let!(:old_report) do
+        create(:report,
+          reporter: reporter,
+          reportable: recipe_old,
+          status: :pending,
+          reason: :spam,
+          created_at: Time.zone.parse("2026-01-10 10:00:00")
+        )
+      end
+
+      let!(:new_report) do
+        create(:report,
+          reporter: reporter,
+          reportable: recipe_new,
+          status: :pending,
+          reason: :spam,
+          created_at: Time.zone.parse("2026-01-20 10:00:00")
+        )
+      end
+
+      before { sign_in admin }
   end
 end
