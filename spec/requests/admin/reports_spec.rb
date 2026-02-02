@@ -132,5 +132,18 @@ RSpec.describe "Admin::Reports", type: :request do
       end
 
       before { sign_in admin }
+      it "新しい方が先に出現する（同時刻のid比較はしない）" do
+        get admin_reports_path
+        expect(response).to have_http_status(:ok)
+
+        body = response.body
+        pos_new = body.index("新しいレシピ")
+        pos_old = body.index("古いレシピ")
+
+        expect(pos_new).not_to be_nil
+        expect(pos_old).not_to be_nil
+        expect(pos_new).to be < pos_old
+      end
+    end
   end
 end
