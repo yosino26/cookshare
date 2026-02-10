@@ -35,5 +35,26 @@ RSpec.describe "Admin::Reports 更新系", type: :request do
     end
   end
 
+  describe "PATCH /admin/reports/:id/investigate" do
+    it_behaves_like "未ログインはログイン画面へ", :patch, -> { investigate_path }
+    it_behaves_like "一般ユーザーはrootへ", :patch, -> { investigate_path }
+
+    context "管理者" do
+      before { sign_in admin }
+
+      it "statusが investigating になり、admin_user が入る（resolved_atはnilのまま）" do
+        patch investigate_path
+
+        report.reload
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_report_path(report))
+
+        expect(report.status).to eq("investigating")
+        expect(report.admin_user).to eq(admin)
+        expect(report.resolved_at).to be_nil
+      end
+    end
+  end
+
 
 end
