@@ -23,5 +23,17 @@ RSpec.describe "Admin::Reports 更新系", type: :request do
   shared_examples "一般ユーザーはrootへ" do |verb, path_proc, params = {}|
     before { sign_in user }
 
+    it "302でrootへリダイレクトされ、DBは更新されない" do
+      before_attrs = report.reload.attributes
+
+      public_send(verb, instance_exec(&path_proc), params: params)
+
+      expect(response).to have_http_status(:found)
+      expect(response).to redirect_to(root_path)
+      expect(flash[:alert]).to be_present
+      expect(report.reload.attributes).to eq(before_attrs)
+    end
+  end
+
 
 end
