@@ -55,6 +55,29 @@ RSpec.describe "Admin::Reports 更新系", type: :request do
       end
     end
   end
+  
+  describe "PATCH /admin/reports/:id/resolve" do
+    it_behaves_like "未ログインはログイン画面へ", :patch, -> { resolve_path }, { admin_response: "対応しました" }
+    it_behaves_like "一般ユーザーはrootへ", :patch, -> { resolve_path }, { admin_response: "対応しました" }
+
+    context "管理者" do
+      before { sign_in admin }
+
+      it "resolved になり admin_user/resolved_at/admin_response が保存される（admin_responseはトップレベル）" do
+        patch resolve_path, params: { admin_response: "対応しました" }
+
+        report.reload
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_report_path(report))
+
+        expect(report.status).to eq("resolved")
+        expect(report.admin_user).to eq(admin)
+        expect(report.resolved_at).to be_present
+        expect(report.admin_response).to eq("対応しました")
+      end
+    end
+  end
+
 
 
 end
