@@ -129,7 +129,31 @@ RSpec.describe "Admin::Reports 更新系", type: :request do
         expect(report.admin_user).to eq(admin)
       end
 
+      it "status=resolved → resolve! が走り resolved になる（admin_responseはトップレベル）" do
+        patch update_path, params: { report: { status: "resolved" }, admin_response: "更新で解決" }
 
-      
+        report.reload
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_report_path(report))
+
+        expect(report.status).to eq("resolved")
+        expect(report.admin_user).to eq(admin)
+        expect(report.resolved_at).to be_present
+        expect(report.admin_response).to eq("更新で解決")
+      end
+
+      it "status=dismissed → dismiss! が走り dismissed になる（admin_responseはトップレベル）" do
+        patch update_path, params: { report: { status: "dismissed" }, admin_response: "更新で却下" }
+
+        report.reload
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_report_path(report))
+
+        expect(report.status).to eq("dismissed")
+        expect(report.admin_user).to eq(admin)
+        expect(report.resolved_at).to be_present
+        expect(report.admin_response).to eq("更新で却下")
+      end
+
     end
   end
