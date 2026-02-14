@@ -77,7 +77,7 @@ RSpec.describe "Admin::Reports 更新系", type: :request do
       end
     end
   end
-  
+
   describe "PATCH /admin/reports/:id/dismiss" do
     it_behaves_like "未ログインはログイン画面へ", :patch, -> { dismiss_path }, { admin_response: "却下します" }
     it_behaves_like "一般ユーザーはrootへ", :patch, -> { dismiss_path }, { admin_response: "却下します" }
@@ -100,5 +100,36 @@ RSpec.describe "Admin::Reports 更新系", type: :request do
     end
   end
 
+  describe "PATCH /admin/reports/:id (update)" do
+    it_behaves_like "未ログインはログイン画面へ", :patch, -> { update_path }, { report: { status: "investigating" } }
+    it_behaves_like "一般ユーザーはrootへ", :patch, -> { update_path }, { report: { status: "investigating" } }
 
-end
+    context "管理者" do
+      before { sign_in admin }
+
+      it "admin_note が保存され、admin_user が current_user になる（ノート保存分岐）" do
+        patch update_path, params: { report: { admin_note: "メモです" } }
+
+        report.reload
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_report_path(report))
+
+        expect(report.admin_note).to eq("メモです")
+        expect(report.admin_user).to eq(admin)
+      end
+
+      it "status=investigating → investigating に更新される" do
+        patch update_path, params: { report: { status: "investigating" } }
+
+        report.reload
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_report_path(report))
+
+        expect(report.status).to eq("investigating")
+        expect(report.admin_user).to eq(admin)
+      end
+
+
+      
+    end
+  end
