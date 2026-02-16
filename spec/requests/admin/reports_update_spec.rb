@@ -155,5 +155,27 @@ RSpec.describe "Admin::Reports 更新系", type: :request do
         expect(report.admin_response).to eq("更新で却下")
       end
 
+      it "status=pending → pending に戻り、admin_response/resolved_at は nil になる（admin_userは残る）" do
+        # 先に resolved 状態を作る（時刻揺れを避けるためDB直固定）
+        report.update_columns(
+          status: Report.statuses[:resolved],
+          admin_user_id: admin.id,
+          admin_response: "既に対応",
+          resolved_at: Time.current,
+          updated_at: Time.current
+        )
+
+        patch update_path, params: { report: { status: "pending" } }
+
+        report.reload
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_report_path(report))
+
+        expect(report.status).to eq("pending")
+        expect(report.admin_user).to eq(admin) # あなたのupdate実装どおり
+        expect(report.admin_response).to be_nil
+        expect(report.resolved_at).to be_nil
+      end
+
     end
   end
