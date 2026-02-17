@@ -179,3 +179,4 @@ RSpec.describe "Admin::Reports 更新系", type: :request do
 
     end
   end
+end

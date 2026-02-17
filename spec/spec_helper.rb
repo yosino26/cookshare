@@ -13,7 +13,7 @@
 # it.
 #
 # See https://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
-require 'devise'
+config.include Devise::Test::IntegrationHelpers, type: :request
 
 RSpec.configure do |config|
   config.include Devise::Test::IntegrationHelpers, type: :request
