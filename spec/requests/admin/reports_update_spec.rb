@@ -177,6 +177,16 @@ RSpec.describe "Admin::Reports 更新系", type: :request do
         expect(report.resolved_at).to be_nil
       end
 
+      it "不正な status → 更新されない + alert が入る" do
+        before_attrs = report.reload.attributes
+
+        patch update_path, params: { report: { status: "hoge" } }
+
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_report_path(report))
+        expect(flash[:alert]).to be_present
+        expect(report.reload.attributes).to eq(before_attrs)
+      end
     end
   end
 end
