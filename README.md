@@ -229,23 +229,36 @@ DB 制約で必ず不正データを防げることを確認
 ### ③ 管理者向けリクエストテスト（Admin / Request Specs）【今回追加】
 
 **目的**  
-管理画面の一覧・検索・絞り込みロジックを  
+管理画面の一覧・更新処理ロジックを  
 UI に依存せず **HTTP レベルで安定して保証**する
 
 - 管理画面アクセス制御
   - 管理者：200 OK
   - 一般ユーザー：root へリダイレクト
   - 未ログイン：ログイン画面へリダイレクト
+
 - 通報一覧（`GET /admin/reports`）
   - ステータス別絞り込み（pending / investigating / resolved / dismissed）
   - 通報対象タイプ別絞り込み（User / Recipe / Comment）
   - 期間指定検索（`date_from / date_to`）
   - 並び順（`created_at desc`）の安定性確認
-- レシピ・ユーザー・コメントの **全通報種別を網羅**
-- HTML 構造に依存しすぎない検証（email / title / reason など）
-- CI で不安定になりやすい System Spec に依存しない設計
+  - レシピ・ユーザー・コメントの **全通報種別を網羅**
+  - HTML 構造に依存しすぎない検証（email / title / reason など）
+  - `spec/requests/admin/reports_spec.rb`
 
-- `spec/requests/admin/reports_spec.rb`
+- 通報更新処理
+  - `PATCH /admin/reports/:id/investigate`
+  - `PATCH /admin/reports/:id/resolve`
+  - `PATCH /admin/reports/:id/dismiss`
+  - `PATCH /admin/reports/:id`
+  - investigating / resolved / dismissed への状態遷移確認
+  - `admin_user / resolved_at / admin_response` の保存確認
+  - `admin_note` 保存分岐確認
+  - resolved → pending への巻き戻し確認
+  - 不正な status の異常系確認（更新されないこと）
+  - `spec/requests/admin/reports_update_spec.rb`
+
+- CI で不安定になりやすい System Spec に依存しない設計
 
 ---
 
@@ -292,8 +305,6 @@ UI に依存せず **HTTP レベルで安定して保証**する
   - N+1 クエリ／インデックス有無の点検
 - セキュリティ観点の確認  
   - CSRF / XSS / SQL Injection の基本対策確認
-
-
 
 ---
 
