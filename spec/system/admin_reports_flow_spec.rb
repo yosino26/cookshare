@@ -9,14 +9,26 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     click_button "ログイン"
   end
 
+  # ✅ クリックが確実に通る + モーダル存在確認 + 表示確認（堅牢版）
   def open_modal_by_button(button_text, modal_selector)
+    # ボタンの存在確認
     expect(page).to have_button(button_text, wait: 10)
-    click_button button_text
 
-    # DOMにある（表示/非表示問わず）
+    # クリック（見えていないボタンでも押せるように）
+    find("button", text: button_text, visible: :all).click
+
+    # DOMにある（表示/非表示問わず）…ID違いならここで落ちる
     expect(page).to have_css(modal_selector, visible: :all, wait: 10)
+
     # 開くと .show が付く（Bootstrap）
     expect(page).to have_css("#{modal_selector}.show", visible: :all, wait: 10)
+  rescue RSpec::Expectations::ExpectationNotMetError
+    # CIログに残して切り分けしやすくする
+    puts "=== DEBUG modal open failed ==="
+    puts "button_text: #{button_text}"
+    puts "modal_selector: #{modal_selector}"
+    puts page.html.slice(0, 5000)
+    raise
   end
 
   def submit_modal(modal_selector, submit_text: "変更する")
@@ -76,12 +88,12 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
 
   it "管理者はレポート一覧から詳細画面に遷移し、解決済みにできる" do
     skip "CIで admin_reports_path が root に戻るため調査中（Issue #123）"
-  
+
     admin = create(:user, :admin)
     reporter = create(:user)
     recipe_owner = create(:user)
     recipe = create(:recipe, user: recipe_owner)
-  
+
     report = create(
       :report,
       reporter: reporter,
@@ -90,23 +102,23 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
       reason: :spam,
       description: "不適切な内容があります。詳細を確認してください。"
     )
-  
+
     visit new_user_session_path
     fill_in "user_email", with: admin.email
     fill_in "user_password", with: "password"
     click_button "ログイン"
-  
+
     visit admin_reports_path
     click_link "詳細", match: :first
     expect(page).to have_current_path(admin_report_path(report), ignore_query: true)
-  
+
     click_button "解決済みにする"
     expect(page).to have_css("#modalReportStatusResolved.show", wait: 5)
-  
+
     within("#modalReportStatusResolved") do
       click_button "変更する"
     end
-  
+
     expect(page).to have_content("対応済み")
     report.reload
     expect(report).to be_resolved
