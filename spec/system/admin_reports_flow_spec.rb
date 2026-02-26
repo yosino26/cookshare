@@ -1,3 +1,4 @@
+# spec/system/admin_reports_flow_spec.rb
 require "rails_helper"
 
 RSpec.describe "管理者による通報レポートの管理機能", type: :system do
@@ -9,8 +10,8 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     click_button "ログイン"
   end
 
-  # .show の確認はやめる（BootstrapのJSが動かない環境でも安定させる）
-  # 「DOMにモーダルが存在する」ことだけ確認して先に進む
+  # モーダルを「開けたかどうか」に依存しすぎない方針
+  # クリックは行い、DOM上にモーダルが存在することだけ確認する
   def open_modal_by_button(button_text, modal_selector)
     expect(page).to have_button(button_text, wait: 10)
     click_button button_text
@@ -19,10 +20,13 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     expect(page).to have_css(modal_selector, visible: :all, wait: 10)
   end
 
-  # visible: :all で「非表示の中のボタン」も押す
+  # ここが修正のド本命：
+  # within はデフォルトで visible 要素を探すので、hidden のモーダルだと落ちる
+  # → within 自体を visible: :all で探す
   def submit_modal(modal_selector, submit_text: "変更する")
-    within(modal_selector) do
-      find("button", text: submit_text, visible: :all).click
+    within(modal_selector, visible: :all) do
+      # ボタンも hidden 扱いの可能性があるので visible: :all
+      find("button", text: submit_text, visible: :all, wait: 10).click
     end
   end
 
@@ -101,10 +105,10 @@ RSpec.describe "管理者による通報レポートの管理機能", type: :sys
     expect(page).to have_current_path(admin_report_path(report), ignore_query: true)
 
     click_button "解決済みにする"
-    expect(page).to have_css("#modalReportStatusResolved", visible: :all, wait: 10)
+    expect(page).to have_css("#modalReportStatusResolved.show", wait: 5)
 
     within("#modalReportStatusResolved") do
-      find("button", text: "変更する", visible: :all).click
+      click_button "変更する"
     end
 
     expect(page).to have_content("対応済み")
