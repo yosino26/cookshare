@@ -29,4 +29,25 @@ RSpec.describe "Admin::Users 更新系", type: :request do
     end
   end
 
+  shared_examples "一般ユーザーはrootへ" do |verb, path_proc, params = nil|
+    it "302でrootへリダイレクトされ、DBは更新されない" do
+      sign_in create(:user)
+
+      original_attrs = user.attributes.slice("name", "email", "admin", "suspended", "suspended_until", "suspend_reason")
+
+      if params
+        public_send(verb, instance_exec(&path_proc), params: params)
+      else
+        public_send(verb, instance_exec(&path_proc))
+      end
+
+      expect(response).to have_http_status(:found)
+      expect(response).to redirect_to(root_path)
+
+      user.reload
+      expect(user.attributes.slice("name", "email", "admin", "suspended", "suspended_until", "suspend_reason"))
+        .to eq(original_attrs)
+    end
+  end
+
 end
