@@ -67,7 +67,7 @@ RSpec.describe "Admin::Users 更新系", type: :request do
         }
       }
     end
-    
+
     include_examples "未ログインはログイン画面へ", :patch, -> { update_path }, { user: { name: "変更名" } }
     include_examples "一般ユーザーはrootへ", :patch, -> { update_path }, { user: { name: "変更名" } }
 
@@ -84,5 +84,31 @@ RSpec.describe "Admin::Users 更新系", type: :request do
         expect(user.name).to eq("更新後ユーザー")
         expect(user.email).to eq("updated@example.com")
       end
+      it "無効なパラメータでは更新されず422を返す" do
+        original_name  = user.name
+        original_email = user.email
+
+        patch update_path, params: invalid_params
+
+        expect(response).to have_http_status(:unprocessable_entity)
+
+        user.reload
+        expect(user.name).to eq(original_name)
+        expect(user.email).to eq(original_email)
+      end
+
+      it "許可されているためadmin属性も更新できる" do
+        expect(user.admin?).to eq(false)
+
+        patch update_path, params: { user: { admin: true } }
+
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_user_path(user))
+
+        user.reload
+        expect(user.admin?).to eq(true)
+      end
+    end
+  end
 
 end
