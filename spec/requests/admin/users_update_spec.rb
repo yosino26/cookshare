@@ -111,4 +111,36 @@ RSpec.describe "Admin::Users 更新系", type: :request do
     end
   end
 
+  describe "PATCH /admin/users/:id/toggle_admin" do
+    include_examples "未ログインはログイン画面へ", :patch, -> { toggle_admin_path }
+    include_examples "一般ユーザーはrootへ", :patch, -> { toggle_admin_path }
+
+    context "管理者" do
+      before { sign_in admin }
+
+      it "admin=false から true に切り替わる" do
+        expect(user.admin?).to eq(false)
+
+        patch toggle_admin_path
+
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_user_path(user))
+
+        user.reload
+        expect(user.admin?).to eq(true)
+      end
+      it "admin=true から false に切り替わる" do
+        user.update!(admin: true)
+
+        patch toggle_admin_path
+
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_user_path(user))
+
+        user.reload
+        expect(user.admin?).to eq(false)
+      end
+    end
+  end
+
 end
