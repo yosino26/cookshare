@@ -142,5 +142,31 @@ RSpec.describe "Admin::Users 更新系", type: :request do
       end
     end
   end
+  
+  describe "PATCH /admin/users/:id/suspend" do
+    include_examples "未ログインはログイン画面へ", :patch, -> { suspend_path }, { suspend_duration: "7", suspend_reason: "test reason" }
+    include_examples "一般ユーザーはrootへ", :patch, -> { suspend_path }, { suspend_duration: "7", suspend_reason: "test reason" }
+
+    context "管理者" do
+      before { sign_in admin }
+
+      it "期間指定ありなら suspended=false, suspended_until が設定される" do
+        freeze_time do
+          now = Time.current
+
+          patch suspend_path, params: { suspend_duration: "7", suspend_reason: "規約違反の確認中" }
+
+          expect(response).to have_http_status(:found)
+          expect(response).to redirect_to(admin_users_path)
+
+          user.reload
+          expect(user.suspended).to eq(false)
+          expect(user.suspend_reason).to eq("規約違反の確認中")
+          expect(user.suspended_until).to be_present
+          expect(user.suspended_until).to be_within(1.second).of(now + 7.days)
+          expect(user.suspended?).to eq(true)
+        end
+      end
+
 
 end
