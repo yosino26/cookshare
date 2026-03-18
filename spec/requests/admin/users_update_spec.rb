@@ -168,5 +168,20 @@ RSpec.describe "Admin::Users 更新系", type: :request do
         end
       end
 
+      it "duration=0 なら無期限停止として suspended=true になる" do
+        patch suspend_path, params: { suspend_duration: "0", suspend_reason: "重大な違反" }
+
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_users_path)
+
+        user.reload
+        expect(user.suspended).to eq(true)
+        expect(user.suspended_until).to be_nil
+        expect(user.suspend_reason).to eq("重大な違反")
+        expect(user.suspended?).to eq(true)
+      end
+    end
+  end
+
 
 end
