@@ -183,5 +183,14 @@ RSpec.describe "Admin::Users 更新系", type: :request do
     end
   end
 
+  describe "PATCH /admin/users/:id/unsuspend" do
+    before do
+      user.update!(
+        suspended: true,
+        suspended_until: 7.days.from_now,
+        suspend_reason: "停止中"
+      )
+    end
+
 
 end
