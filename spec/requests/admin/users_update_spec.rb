@@ -192,5 +192,26 @@ RSpec.describe "Admin::Users 更新系", type: :request do
       )
     end
 
+    include_examples "未ログインはログイン画面へ", :patch, -> { unsuspend_path }
+    include_examples "一般ユーザーはrootへ", :patch, -> { unsuspend_path }
+
+    context "管理者" do
+      before { sign_in admin }
+
+      it "停止状態を解除できる" do
+        patch unsuspend_path
+
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_users_path)
+
+        user.reload
+        expect(user.suspended).to eq(false)
+        expect(user.suspended_until).to be_nil
+        expect(user.suspend_reason).to be_nil
+        expect(user.suspended?).to eq(false)
+      end
+    end
+  end
+
 
 end
