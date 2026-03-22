@@ -213,5 +213,23 @@ RSpec.describe "Admin::Users 更新系", type: :request do
     end
   end
 
+  describe "PATCH /admin/users/:id/promote" do
+    include_examples "未ログインはログイン画面へ", :patch, -> { promote_path }
+    include_examples "一般ユーザーはrootへ", :patch, -> { promote_path }
+
+    context "管理者" do
+      before { sign_in admin }
+
+      it "一般ユーザーを管理者に昇格できる" do
+        expect(user.admin?).to eq(false)
+
+        patch promote_path
+
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_users_path)
+
+        user.reload
+        expect(user.admin?).to eq(true)
+      end
 
 end
