@@ -231,5 +231,18 @@ RSpec.describe "Admin::Users 更新系", type: :request do
         user.reload
         expect(user.admin?).to eq(true)
       end
+      it "すでに管理者でもadmin=trueのまま維持される" do
+        user.update!(admin: true)
+
+        patch promote_path
+
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_users_path)
+
+        user.reload
+        expect(user.admin?).to eq(true)
+      end
+    end
+  end
 
 end
