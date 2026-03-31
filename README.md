@@ -258,6 +258,17 @@ UI に依存せず **HTTP レベルで安定して保証**する
   - 不正な status の異常系確認（更新されないこと）
   - `spec/requests/admin/reports_update_spec.rb`
 
+- ユーザー管理更新処理
+  - `PATCH /admin/users/:id`
+  - `PATCH /admin/users/:id/toggle_admin`
+  - `PATCH /admin/users/:id/suspend`
+  - `PATCH /admin/users/:id/unsuspend`
+  - `PATCH /admin/users/:id/promote`
+  - 未ログイン・一般ユーザー・管理者それぞれの挙動確認
+  - 更新成功時のDB反映、無効なパラメータ時の未更新確認
+  - 権限切り替え、停止、停止解除、昇格の各処理確認
+  - `spec/requests/admin/users_update_spec.rb`
+
 - UI 依存を避け、CI で不安定になりやすい System Spec に依存しない設計
 
 ---
