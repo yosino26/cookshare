@@ -1,5 +1,5 @@
 class Admin::RecipesController < Admin::BaseController
-  before_action :set_recipe, only: [:show, :destroy, :hide, :unhide] 
+  before_action :set_recipe, only: [:show, :edit, :update, :destroy, :hide, :unhide]
 
   def index
     # フィルタ（検索・並び順・件数）
@@ -55,6 +55,17 @@ class Admin::RecipesController < Admin::BaseController
   def show
    # いったん公開側の詳細にリダイレクト（管理用のshowを作るまでの暫定）
    redirect_to recipe_path(@recipe)
+  end
+
+  def edit
+  end
+  
+  def update
+    if @recipe.update(recipe_params)
+      redirect_to admin_recipe_path(@recipe), notice: 'レシピを更新しました'
+    else
+      render :edit, status: :unprocessable_entity
+    end
   end
 
   def destroy
@@ -160,4 +171,19 @@ class Admin::RecipesController < Admin::BaseController
     stats[:avg_cooking_time] = Recipe.column_names.include?('cooking_time') ? Recipe.average(:cooking_time).to_i : nil
     stats
   end
+
+  def recipe_params
+    params.require(:recipe).permit(
+      :title,
+      :description,
+      :cooking_time,
+      :servings,
+      :hidden,
+      :image,
+      category_ids: [],
+      ingredients_attributes: [:id, :name, :amount, :order_number, :_destroy],
+      steps_attributes: [:id, :instruction, :step_number, :_destroy]
+    )
+  end
+  
 end
