@@ -105,6 +105,18 @@ RSpec.describe "Admin::Recipes 更新系", type: :request do
         expect(recipe.servings).to eq(4)
       end
 
+      it "無効なパラメータでは更新されず422を返す" do
+        original_attrs = recipe.attributes.slice("title", "description", "cooking_time", "servings")
+
+        patch update_path, params: invalid_params
+
+        expect(response).to have_http_status(:unprocessable_entity)
+
+        recipe.reload
+        expect(recipe.attributes.slice("title", "description", "cooking_time", "servings"))
+          .to eq(original_attrs)
+      end
+
 
 
   
