@@ -116,6 +116,40 @@ RSpec.describe "Admin::Recipes 更新系", type: :request do
         expect(recipe.attributes.slice("title", "description", "cooking_time", "servings"))
           .to eq(original_attrs)
       end
+      
+      it "hidden属性も更新できる" do
+        expect(recipe.hidden).to eq(false)
+
+        patch update_path, params: { recipe: { hidden: true } }
+
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_recipe_path(recipe))
+
+        recipe.reload
+        expect(recipe.hidden).to eq(true)
+      end
+    end
+  end
+
+  describe "DELETE /admin/recipes/:id" do
+    include_examples "未ログインはログイン画面へ", :delete, -> { destroy_path }
+    include_examples "一般ユーザーはrootへ", :delete, -> { destroy_path }
+
+    context "管理者" do
+      before { sign_in admin }
+
+      it "レシピを削除できる" do
+        recipe
+
+        expect do
+          delete destroy_path
+        end.to change(Recipe, :count).by(-1)
+
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_recipes_path)
+      end
+    end
+  end
 
 
 
