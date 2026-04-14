@@ -151,7 +151,26 @@ RSpec.describe "Admin::Recipes 更新系", type: :request do
     end
   end
 
+  describe "PATCH /admin/recipes/:id/hide" do
+    include_examples "未ログインはログイン画面へ", :patch, -> { hide_path }
+    include_examples "一般ユーザーはrootへ", :patch, -> { hide_path }
 
+    context "管理者" do
+      before { sign_in admin }
+
+      it "レシピを非公開にできる" do
+        expect(recipe.hidden).to eq(false)
+
+        patch hide_path
+
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(admin_recipes_path)
+
+        recipe.reload
+        expect(recipe.hidden).to eq(true)
+      end
+    end
+  end
 
   
 end
