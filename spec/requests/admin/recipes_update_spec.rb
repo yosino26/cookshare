@@ -172,5 +172,13 @@ RSpec.describe "Admin::Recipes 更新系", type: :request do
     end
   end
 
+  describe "PATCH /admin/recipes/:id/unhide" do
+    before do
+      recipe.update!(hidden: true)
+    end
+
+    include_examples "未ログインはログイン画面へ", :patch, -> { unhide_path }
+    include_examples "一般ユーザーはrootへ", :patch, -> { unhide_path }
+
   
 end
