@@ -1,0 +1,11 @@
+<h1>レシピ編集</h1>
+
+<% if @recipe.errors.any? %>
+  <div class="alert alert-danger">
+    <ul>
+      <% @recipe.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
