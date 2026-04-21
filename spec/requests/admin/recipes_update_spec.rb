@@ -110,7 +110,7 @@ RSpec.describe "Admin::Recipes 更新系", type: :request do
 
         patch update_path, params: invalid_params
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
 
         recipe.reload
         expect(recipe.attributes.slice("title", "description", "cooking_time", "servings"))

@@ -64,7 +64,7 @@ class Admin::RecipesController < Admin::BaseController
     if @recipe.update(recipe_params)
       redirect_to admin_recipe_path(@recipe), notice: 'レシピを更新しました'
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 
