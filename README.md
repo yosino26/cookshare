@@ -190,6 +190,7 @@ CookShareは、家庭料理を共有し、他のユーザーと交流できるSN
 通報対象（ユーザー／レシピ／コメント）に直接遷移して対応を行えます。
 
 
+
 ## 🧪 テスト状況（実施済み）
 
 ### ① モデルテスト（Model Specs）
@@ -268,6 +269,16 @@ UI に依存せず **HTTP レベルで安定して保証**する
   - 更新成功時のDB反映、無効なパラメータ時の未更新確認
   - 権限切り替え、停止、停止解除、昇格の各処理確認
   - `spec/requests/admin/users_update_spec.rb`
+
+- レシピ管理更新処理
+  - `PATCH /admin/recipes/:id`
+  - `DELETE /admin/recipes/:id`
+  - `PATCH /admin/recipes/:id/hide`
+  - `PATCH /admin/recipes/:id/unhide`
+  - 未ログイン・一般ユーザー・管理者それぞれの挙動確認
+  - 更新成功時のDB反映、無効なパラメータ時の未更新確認
+  - レシピ削除、非公開、再公開の各処理確認
+  - `spec/requests/admin/recipes_update_spec.rb`
 
 - UI 依存を避け、CI で不安定になりやすい System Spec に依存しない設計
 
