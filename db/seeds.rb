@@ -29,12 +29,14 @@ def ensure_user!(email:, password:, admin: false, label: nil)
   # name系カラムの自動補完
   name_key = (%w[name username display_name full_name] & User.column_names).first
   u[name_key] = (label || email.split("@").first.capitalize) if name_key && u[name_key].blank?
+
   if u.new_record?
     u.password = password
     u.admin = admin if User.column_names.include?("admin")
   else
     u.admin = true if admin && User.column_names.include?("admin") && !u.admin?
   end
+
   u.save!
   u
 end unless defined?(ensure_user!)
@@ -53,6 +55,7 @@ def promote_user_to_admin!(email:, new_password: nil, label: nil)
   if u.new_record? && u.password.blank?
     u.password = new_password.presence || "password123"
   end
+
   u.save!
   u
 end unless defined?(promote_user_to_admin!)
@@ -69,6 +72,7 @@ def ensure_categories!(names)
       return
     end
   end
+
   names.each { |n| Category.find_or_create_by!(name: n) }
 end unless defined?(ensure_categories!)
 
@@ -87,7 +91,6 @@ def attach_image_from_disk!(record, basename, dir: "db/seed_images", attachment_
   io = File.open(path, "rb")
   content_type =
     if defined?(Marcel)
-      # Pathname 不要。パス文字列でOK
       Marcel::MimeType.for(path.to_s)
     else
       "image/jpeg"
@@ -95,7 +98,7 @@ def attach_image_from_disk!(record, basename, dir: "db/seed_images", attachment_
 
   if record.respond_to?(attachment_name)
     record.public_send(attachment_name).attach(io: io, filename: File.basename(path), content_type: content_type)
-  elsif record.respond_to?(:image) # 単数添付のモデルにも対応
+  elsif record.respond_to?(:image)
     record.image.attach(io: io, filename: File.basename(path), content_type: content_type)
   else
     raise "No ActiveStorage attachment on #{record.class} (expected :#{attachment_name} or :image)"
@@ -107,20 +110,28 @@ def add_ingredients!(recipe, items)
   return unless defined?(Ingredient)
   return unless recipe.respond_to?(:ingredients)
 
-  items.each do |name, qty|
-    # よくあるカラム: name, quantity
+  name_col   = (%w[name title] & Ingredient.column_names).first
+  amount_col = (%w[amount quantity qty] & Ingredient.column_names).first
+  order_col  = (%w[order_number position sort_order sort order] & Ingredient.column_names).first
+
+  items.each_with_index do |(name, qty), idx|
     attrs = {}
-    attrs[:name] = name if Ingredient.column_names.include?("name")
-    attrs[:quantity] = qty if Ingredient.column_names.include?("quantity")
+    attrs[name_col.to_sym]   = name if name_col
+    attrs[amount_col.to_sym] = qty if amount_col
+    attrs[order_col.to_sym]  = idx + 1 if order_col
     next if attrs.empty?
 
-    # 冪等: 同一name(+quantity)があるなら作らない
     scope = recipe.ingredients
-    found = if attrs.key?(:quantity)
-      scope.find_by(name: attrs[:name], quantity: attrs[:quantity])
-    else
-      scope.find_by(name: attrs[:name])
-    end
+
+    found =
+      if name_col && amount_col
+        scope.find_by(name_col => name, amount_col => qty)
+      elsif name_col
+        scope.find_by(name_col => name)
+      else
+        nil
+      end
+
     scope.create!(attrs) unless found
   end
 end unless defined?(add_ingredients!)
@@ -129,9 +140,8 @@ def add_steps!(recipe, lines)
   return unless defined?(Step)
   return unless recipe.respond_to?(:steps)
 
-  # よくあるカラム: body/text/content/description, position
-  body_col = (%w[body text content description] & Step.column_names).first
-  pos_col  = (%w[position step_no order sort sort_order] & Step.column_names).first
+  body_col = (%w[instruction body text content description] & Step.column_names).first
+  pos_col  = (%w[step_number position step_no order_number sort_order sort order] & Step.column_names).first
 
   lines.each_with_index do |line, idx|
     attrs = {}
@@ -139,45 +149,46 @@ def add_steps!(recipe, lines)
     attrs[pos_col.to_sym]  = idx + 1 if pos_col
     next if attrs.empty?
 
-    # 冪等: 同一本文(+position)が存在ならスキップ
     scope = recipe.steps
-    found = if pos_col && body_col
-      scope.find_by(body_col => line, pos_col => idx + 1)
-    elsif body_col
-      scope.find_by(body_col => line)
-    else
-      nil
-    end
+
+    found =
+      if body_col && pos_col
+        scope.find_by(body_col => line, pos_col => idx + 1)
+      elsif body_col
+        scope.find_by(body_col => line)
+      else
+        nil
+      end
+
     scope.create!(attrs) unless found
   end
 end unless defined?(add_steps!)
 
 # 1レシピをまとめて投入
 def add_recipe_with_all!(user_email:, user_password:, title:, desc:, servings:, minutes:, category_name:, image_basename:, ingredients:, steps:)
-  # ユーザー確保
-  user = User.find_by(email: user_email) || ensure_user!(email: user_email, password: user_password, label: user_email.split("@").first.capitalize)
+  user = User.find_by(email: user_email) || ensure_user!(
+    email: user_email,
+    password: user_password,
+    label: user_email.split("@").first.capitalize
+  )
 
-  # レシピ作成（冪等に更新許可）
   recipe = Recipe.find_or_initialize_by(user: user, title: title)
   recipe.description  = desc if Recipe.column_names.include?("description")
   recipe.servings     = servings if Recipe.column_names.include?("servings")
   recipe.cooking_time = minutes if Recipe.column_names.include?("cooking_time")
   recipe.save!
 
-  # 画像添付
   begin
     attach_image_from_disk!(recipe, image_basename)
   rescue => e
     warn "[SEED WARNING] 画像添付失敗 #{title}: #{e.message}"
   end
 
-  # カテゴリ紐付け
   cat = ensure_category!(category_name)
   if recipe.respond_to?(:categories)
     recipe.categories << cat unless recipe.categories.exists?(id: cat.id)
   end
 
-  # 材料・手順（対応モデルがあれば）
   add_ingredients!(recipe, ingredients)
   add_steps!(recipe, steps)
 
@@ -188,7 +199,6 @@ end unless defined?(add_recipe_with_all!)
 # ===================== データ投入（ベース） =====================
 ensure_categories!(%w[和食 洋食 中華 アジア エスニック])
 
-# 既存の admin@example.com（管理者1）と一般3名の例（必要なら残す）
 admin = ensure_user!(
   email: "admin@example.com",
   password: "password123",
@@ -199,20 +209,19 @@ user1 = ensure_user!(email: "user1@example.com", password: "userpass1", label: "
 user2 = ensure_user!(email: "user2@example.com", password: "userpass2", label: "User2")
 user3 = ensure_user!(email: "user3@example.com", password: "userpass3", label: "User3")
 
-# 既存ユーザー昇格の例（必要時のみ有効）
 promote_user_to_admin!(
   email: "admin2@example.com",
-  new_password: "123456",   # ← パスワードをこの値にしたい場合は、SEED_FORCE_PASSWORD_RESET=1 を環境変数に設定
+  new_password: "123456",
   label: "Admin2"
 )
 
 # ---- レシピデータ定義 -------------------------------------------------------------
 recipes_payload = [
   {
-    user_email:  "user1@example.com",
+    user_email: "user1@example.com",
     user_password: "userpass1",
     title: "親子丼",
-    desc:  "甘辛つゆで煮た鶏と玉ねぎを卵でとじる定番丼。",
+    desc: "甘辛つゆで煮た鶏と玉ねぎを卵でとじる定番丼。",
     servings: 2,
     minutes: 15,
     category_name: "和食",
@@ -238,10 +247,10 @@ recipes_payload = [
     ]
   },
   {
-    user_email:  "user1@example.com",
+    user_email: "user1@example.com",
     user_password: "userpass1",
     title: "簡単食パンピザ",
-    desc:  "食パンに具をのせて焼くだけ。トースターで手軽。",
+    desc: "食パンに具をのせて焼くだけ。トースターで手軽。",
     servings: 2,
     minutes: 10,
     category_name: "洋食",
@@ -268,10 +277,10 @@ recipes_payload = [
     ]
   },
   {
-    user_email:  "user2@example.com",
+    user_email: "user2@example.com",
     user_password: "userpass2",
     title: "簡単お茶漬け",
-    desc:  "ごはんに熱いお茶やだしを注ぐだけ。夜食・〆に。",
+    desc: "ごはんに熱いお茶やだしを注ぐだけ。夜食・〆に。",
     servings: 1,
     minutes: 5,
     category_name: "和食",
@@ -290,10 +299,10 @@ recipes_payload = [
     ]
   },
   {
-    user_email:  "user2@example.com",
+    user_email: "user2@example.com",
     user_password: "userpass2",
     title: "ハンバーグ",
-    desc:  "ふわっとジューシーな定番。フライパン1つ。",
+    desc: "ふわっとジューシーな定番。フライパン1つ。",
     servings: 2,
     minutes: 25,
     category_name: "洋食",
@@ -326,7 +335,12 @@ recipes_payload = [
 
 # ---- 実投入 ----------------------------------------------------------------------
 recipes_payload.each do |r|
-  add_recipe_with_all!(**r)
+  begin
+    add_recipe_with_all!(**r)
+  rescue => e
+    warn "[SEED ERROR] #{r[:title]} の投入に失敗: #{e.class} / #{e.message}"
+    raise
+  end
 end
 
 puts "== Done(追加レシピ): #{recipes_payload.map { |h| h[:title] }.join(', ')}"
