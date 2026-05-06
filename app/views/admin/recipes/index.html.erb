@@ -127,15 +127,17 @@
       <!-- 表示件数 -->
       <div class="col-md-2">
         <%= form.label :per_page, "表示件数", class: "form-label" %>
-        <%= form.select :per_page, 
+        <%= form.select :per_page,
             options_for_select([
-              ['12件', '12'],
-              ['24件', '24'],
-              ['48件', '48']
-            ], @filter_params[:per_page] || '12'), 
-            {}, 
+              ['20件', '20'],
+              ['50件', '50'],
+              ['100件', '100']
+            ], @filter_params[:per_page] || '20'),
+            {},
             { class: "form-select" } %>
       </div>
+
+
     <% end %>
   </div>
 </div>
