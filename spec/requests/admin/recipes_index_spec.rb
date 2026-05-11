@@ -65,4 +65,45 @@ RSpec.describe "Admin::Recipes 一覧系", type: :request do
             user: user
           )
         end
+
+        it "タイトルまたは説明文に一致したレシピだけ表示される" do
+          get admin_recipes_path, params: { search: "カレー" }
+
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("和風カレー")
+          expect(response.body).to include("別の料理")
+          expect(response.body).not_to include("オムライス")
+        end
+      end
+
+      describe "並び順" do
+        let!(:old_recipe) do
+          create(
+            :recipe,
+            title: "古いレシピ",
+            created_at: 3.days.ago,
+            cooking_time: 30,
+            user: user
+          )
+        end
+
+        let!(:middle_recipe) do
+          create(
+            :recipe,
+            title: "中間のレシピ",
+            created_at: 2.days.ago,
+            cooking_time: 20,
+            user: user
+          )
+        end
+
+        let!(:new_recipe) do
+          create(
+            :recipe,
+            title: "新しいレシピ",
+            created_at: 1.day.ago,
+            cooking_time: 10,
+            user: user
+          )
+        end
 end
