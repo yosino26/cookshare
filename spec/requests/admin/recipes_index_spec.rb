@@ -106,4 +106,12 @@ RSpec.describe "Admin::Recipes 一覧系", type: :request do
             user: user
           )
         end
+        it "created_descでは新しい順に表示される" do
+          get admin_recipes_path, params: { sort: "created_desc" }
+
+          expect(response).to have_http_status(:ok)
+
+          expect(response.body.index("新しいレシピ")).to be < response.body.index("中間のレシピ")
+          expect(response.body.index("中間のレシピ")).to be < response.body.index("古いレシピ")
+        end
 end
