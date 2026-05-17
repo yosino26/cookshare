@@ -122,4 +122,14 @@ RSpec.describe "Admin::Recipes 一覧系", type: :request do
           expect(response.body.index("古いレシピ")).to be < response.body.index("中間のレシピ")
           expect(response.body.index("中間のレシピ")).to be < response.body.index("新しいレシピ")
         end
+        it "cooking_timeでは調理時間が短い順に表示される" do
+          get admin_recipes_path, params: { sort: "cooking_time" }
+
+          expect(response).to have_http_status(:ok)
+
+          expect(response.body.index("新しいレシピ")).to be < response.body.index("中間のレシピ")
+          expect(response.body.index("中間のレシピ")).to be < response.body.index("古いレシピ")
+        end
+      end
+
 end
