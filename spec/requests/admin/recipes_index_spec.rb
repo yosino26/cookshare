@@ -131,5 +131,40 @@ RSpec.describe "Admin::Recipes 一覧系", type: :request do
           expect(response.body.index("中間のレシピ")).to be < response.body.index("古いレシピ")
         end
       end
+      describe "人気順" do
+        let!(:popular_recipe) do
+          create(
+            :recipe,
+            title: "人気レシピ",
+            created_at: 3.days.ago,
+            user: user
+          )
+        end
+
+        let!(:normal_recipe) do
+          create(
+            :recipe,
+            title: "普通のレシピ",
+            created_at: 2.days.ago,
+            user: user
+          )
+        end
+
+        let!(:low_recipe) do
+          create(
+            :recipe,
+            title: "少ないレシピ",
+            created_at: 1.day.ago,
+            user: user
+          )
+        end
+
+        before do
+          3.times do
+            create(:favorite, recipe: popular_recipe, user: create(:user))
+          end
+
+          create(:favorite, recipe: normal_recipe, user: create(:user))
+        end
 
 end
