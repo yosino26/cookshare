@@ -167,4 +167,26 @@ RSpec.describe "Admin::Recipes 一覧系", type: :request do
           create(:favorite, recipe: normal_recipe, user: create(:user))
         end
 
+        it "popularではお気に入り数が多い順に表示される" do
+          get admin_recipes_path, params: { sort: "popular" }
+
+          expect(response).to have_http_status(:ok)
+
+          expect(response.body.index("人気レシピ")).to be < response.body.index("普通のレシピ")
+          expect(response.body.index("普通のレシピ")).to be < response.body.index("少ないレシピ")
+        end
+      end
+
+      describe "表示件数" do
+        before do
+          25.times do |i|
+            create(
+              :recipe,
+              title: "一覧テストレシピ#{i + 1}",
+              created_at: i.minutes.ago,
+              user: user
+            )
+          end
+        end
+
 end
