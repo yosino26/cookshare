@@ -195,5 +195,11 @@ RSpec.describe "Admin::Recipes 一覧系", type: :request do
           expect(response).to have_http_status(:ok)
           expect(response.body.scan(/一覧テストレシピ\d+/).count).to eq 20
         end
+        it "per_page=50の場合、25件表示される" do
+          get admin_recipes_path, params: { per_page: 50 }
+
+          expect(response).to have_http_status(:ok)
+          expect(response.body.scan(/一覧テストレシピ\d+/).count).to eq 25
+        end
 
 end
