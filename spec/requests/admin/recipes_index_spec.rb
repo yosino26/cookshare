@@ -208,5 +208,13 @@ RSpec.describe "Admin::Recipes 一覧系", type: :request do
           expect(response).to have_http_status(:ok)
           expect(response.body.scan(/一覧テストレシピ\d+/).count).to eq 25
         end
+        it "不正なper_pageの場合、20件にフォールバックする" do
+          get admin_recipes_path, params: { per_page: 999 }
 
+          expect(response).to have_http_status(:ok)
+          expect(response.body.scan(/一覧テストレシピ\d+/).count).to eq 20
+        end
+      end
+    end
+  end
 end
