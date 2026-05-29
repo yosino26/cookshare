@@ -270,6 +270,17 @@ UI に依存せず **HTTP レベルで安定して保証**する
   - 権限切り替え、停止、停止解除、昇格の各処理確認
   - `spec/requests/admin/users_update_spec.rb`
 
+- レシピ管理一覧
+  - `GET /admin/recipes`
+  - 未ログイン・一般ユーザー・管理者それぞれの挙動確認
+  - 管理者のみレシピ一覧画面を表示できることを確認
+  - キーワード検索でタイトル・説明文に一致するレシピだけ表示されることを確認
+  - 新しい順・古い順・調理時間順・人気順の並び替え確認
+  - 表示件数（20件 / 50件 / 100件）の切り替え確認
+  - 不正な表示件数の場合、20件に戻ることを確認
+  - UI操作に依存せず、HTTPレスポンス本文を中心に検証
+  - `spec/requests/admin/recipes_index_spec.rb`
+
 - レシピ管理更新処理
   - `PATCH /admin/recipes/:id`
   - `DELETE /admin/recipes/:id`
