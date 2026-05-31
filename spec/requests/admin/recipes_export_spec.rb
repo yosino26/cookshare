@@ -13,5 +13,17 @@ RSpec.describe "Admin::Recipes CSVエクスポート", type: :request do
         expect(response).to redirect_to(new_user_session_path)
       end
     end
+    context "一般ユーザー" do
+      before do
+        sign_in user
+      end
+
+      it "rootへリダイレクトされる" do
+        get admin_recipes_export_path(format: :csv)
+
+        expect(response).to have_http_status(:found)
+        expect(response).to redirect_to(root_path)
+      end
+    end
 
 end
