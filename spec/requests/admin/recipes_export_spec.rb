@@ -37,7 +37,16 @@ RSpec.describe "Admin::Recipes CSVエクスポート", type: :request do
         expect(response).to have_http_status(:ok)
         expect(response.media_type).to eq("text/csv")
       end
+      it "CSVにヘッダーが含まれる" do
+        get admin_recipes_export_path(format: :csv)
+
+        csv = CSV.parse(response.body, headers: true)
+
+        expect(csv.headers).to eq(
+          %w[id title user_email created_at cooking_time favorites comments]
+        )
+      end
 
 
-      
+
 end
