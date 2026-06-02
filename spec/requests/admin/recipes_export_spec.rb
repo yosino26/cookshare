@@ -26,4 +26,18 @@ RSpec.describe "Admin::Recipes CSVエクスポート", type: :request do
       end
     end
 
+    context "管理者" do
+      before do
+        sign_in admin
+      end
+
+      it "CSVを取得できる" do
+        get admin_recipes_export_path(format: :csv)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.media_type).to eq("text/csv")
+      end
+
+
+      
 end
