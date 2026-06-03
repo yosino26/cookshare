@@ -47,6 +47,22 @@ RSpec.describe "Admin::Recipes CSVエクスポート", type: :request do
         )
       end
 
+      it "CSVにレシピ情報が含まれる" do
+        recipe = create(
+          :recipe,
+          title: "CSV用レシピ",
+          cooking_time: 15,
+          user: user
+        )
 
+        get admin_recipes_export_path(format: :csv)
+
+        csv = CSV.parse(response.body, headers: true)
+        row = csv.find { |r| r["id"].to_i == recipe.id }
+
+        expect(row["title"]).to eq("CSV用レシピ")
+        expect(row["user_email"]).to eq("user@example.com")
+        expect(row["cooking_time"]).to eq("15")
+      end
 
 end
