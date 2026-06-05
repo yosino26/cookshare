@@ -64,5 +64,13 @@ RSpec.describe "Admin::Recipes CSVエクスポート", type: :request do
         expect(row["user_email"]).to eq("user@example.com")
         expect(row["cooking_time"]).to eq("15")
       end
+      let!(:matched_by_description) do
+        create(
+          :recipe,
+          title: "CSV別料理",
+          description: "カレー粉を使ったレシピです。",
+          user: user
+        )
+      end4
 
 end
