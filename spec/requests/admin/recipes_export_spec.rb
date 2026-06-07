@@ -71,6 +71,14 @@ RSpec.describe "Admin::Recipes CSVエクスポート", type: :request do
           description: "カレー粉を使ったレシピです。",
           user: user
         )
-      end4
+      end
+      let!(:not_matched) do
+        create(
+          :recipe,
+          title: "CSVオムライス",
+          description: "卵を使ったレシピです。",
+          user: user
+        )
+      end
 
 end
