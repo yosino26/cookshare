@@ -85,8 +85,28 @@ RSpec.describe "Admin::Recipes CSVエクスポート", type: :request do
             user: user
           )
         end
+        let!(:not_matched) do
+          create(
+            :recipe,
+            title: "CSVオムライス",
+            description: "卵を使ったレシピです。",
+            user: user
+          )
+        end
 
+        it "searchに一致したレシピだけCSVに出力される" do
+          get admin_recipes_export_path(format: :csv), params: { search: "カレー" }
 
+          expect(response).to have_http_status(:ok)
+
+          csv = CSV.parse(response.body, headers: true)
+          titles = csv.map { |row| row["title"] }
+
+          expect(titles).to include("CSVカレー")
+          expect(titles).to include("CSV別料理")
+          expect(titles).not_to include("CSVオムライス")
+        end
+      end
     end
   end
 end
