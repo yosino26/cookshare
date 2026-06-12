@@ -1,4 +1,3 @@
-# app/controllers/admin/comments_controller.rb
 class Admin::CommentsController < Admin::BaseController
   before_action :set_admin_breadcrumbs
 
