@@ -28,6 +28,20 @@ RSpec.describe "Admin::Comments 更新系", type: :request do
           expect(comment.reload.hidden).to be false
         end
       end
+      context "管理者" do
+        before do
+          sign_in admin
+        end
+  
+        it "コメントを非表示にできる" do
+          patch hide_admin_comment_path(comment)
+  
+          expect(response).to have_http_status(:found)
+          expect(response).to redirect_to(admin_comments_path)
+          expect(comment.reload.hidden).to be true
+        end
+      end
+    end
 
 
     end
