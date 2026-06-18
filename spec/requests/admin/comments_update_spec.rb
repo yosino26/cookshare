@@ -77,6 +77,26 @@ RSpec.describe "Admin::Comments 更新系", type: :request do
         end
       end
     end
+    describe "PATCH /admin/comments/bulk" do
+      let!(:comment1) { create(:comment, recipe: recipe, user: user, hidden: false) }
+      let!(:comment2) { create(:comment, recipe: recipe, user: user, hidden: false) }
+  
+      context "管理者" do
+        before do
+          sign_in admin
+        end
+  
+        it "複数コメントをまとめて非表示にできる" do
+          patch bulk_admin_comments_path, params: {
+            comment_ids: [comment1.id, comment2.id],
+            bulk_action: "hide"
+          }
+  
+          expect(response).to have_http_status(:found)
+          expect(response).to redirect_to(admin_comments_path)
+          expect(comment1.reload.hidden).to be true
+          expect(comment2.reload.hidden).to be true
+        end
 
 
     end
