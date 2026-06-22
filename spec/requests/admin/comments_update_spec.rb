@@ -111,5 +111,16 @@ RSpec.describe "Admin::Comments 更新系", type: :request do
           expect(comment1.reload.hidden).to be false
           expect(comment2.reload.hidden).to be false
         end
+        it "複数コメントをまとめて削除できる" do
+          expect {
+            patch bulk_admin_comments_path, params: {
+              comment_ids: [comment1.id, comment2.id],
+              bulk_action: "delete"
+            }
+          }.to change(Comment, :count).by(-2)
+  
+          expect(response).to have_http_status(:found)
+          expect(response).to redirect_to(admin_comments_path)
+        end
 
     end
