@@ -122,5 +122,18 @@ RSpec.describe "Admin::Comments 更新系", type: :request do
           expect(response).to have_http_status(:found)
           expect(response).to redirect_to(admin_comments_path)
         end
+        it "対象が未選択の場合、コメントは変更されない" do
+          expect {
+            patch bulk_admin_comments_path, params: {
+              comment_ids: [],
+              bulk_action: "hide"
+            }
+          }.not_to change(Comment, :count)
+  
+          expect(response).to have_http_status(:found)
+          expect(response).to redirect_to(admin_comments_path)
+          expect(comment1.reload.hidden).to be false
+          expect(comment2.reload.hidden).to be false
+        end
 
     end
