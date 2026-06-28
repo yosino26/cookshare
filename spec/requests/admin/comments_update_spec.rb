@@ -1,3 +1,6 @@
+require "rails_helper"
+
+
 RSpec.describe "Admin::Comments 更新系", type: :request do
   let(:admin) { create(:user, :admin) }
   let(:user)  { create(:user) }
@@ -6,7 +9,6 @@ RSpec.describe "Admin::Comments 更新系", type: :request do
   describe "PATCH /admin/comments/:id/hide" do
     let!(:comment) { create(:comment, recipe: recipe, user: user, hidden: false) }
 
-      end
       context "未ログイン" do
         it "ログイン画面へリダイレクトされる" do
           patch hide_admin_comment_path(comment)
@@ -135,6 +137,17 @@ RSpec.describe "Admin::Comments 更新系", type: :request do
           expect(comment1.reload.hidden).to be false
           expect(comment2.reload.hidden).to be false
         end
-
-
+        it "アクション未選択の場合、コメントは変更されない" do
+          patch bulk_admin_comments_path, params: {
+            comment_ids: [comment1.id, comment2.id],
+            bulk_action: ""
+          }
+  
+          expect(response).to have_http_status(:found)
+          expect(response).to redirect_to(admin_comments_path)
+          expect(comment1.reload.hidden).to be false
+          expect(comment2.reload.hidden).to be false
+        end
+      end
     end
+  end
