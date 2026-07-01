@@ -291,6 +291,21 @@ UI に依存せず **HTTP レベルで安定して保証**する
   - レシピ削除、非公開、再公開の各処理確認
   - `spec/requests/admin/recipes_update_spec.rb`
 
+- レシピCSVエクスポート
+  - `GET /admin/recipes/export`
+  - 管理者のみCSVを取得できることを確認
+  - CSVのヘッダー・出力内容・検索条件の反映を確認
+  - `spec/requests/admin/recipes_export_spec.rb`
+
+- コメント管理更新処理
+  - `PATCH /admin/comments/:id/hide`
+  - `PATCH /admin/comments/:id/unhide`
+  - `DELETE /admin/comments/:id`
+  - `PATCH /admin/comments/bulk`
+  - コメントの非表示・再表示・削除を確認
+  - 複数コメントの一括操作を確認
+  - `spec/requests/admin/comments_update_spec.rb`
+
 - UI 依存を避け、CI で不安定になりやすい System Spec に依存しない設計
 
 ---
